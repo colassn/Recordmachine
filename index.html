@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>機台收支管理系統 Pro V7.9.1</title>
+    <title>機台收支管理系統 Pro V8.1</title>
     
     <!-- React & Libraries -->
     <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
@@ -51,6 +51,14 @@
         }
 
         /* --- 玻璃擬態組件 --- */
+        .glass-dock {
+            background: rgba(18, 18, 23, 0.85);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-top: 1px solid rgba(255, 255, 255, 0.15);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+        }
+        
         .glass-nav {
             background: rgba(30, 30, 35, 0.6);
             border: 1px solid rgba(255, 255, 255, 0.1);
@@ -140,7 +148,16 @@
         const auth = firebase.auth();
         const db = firebase.firestore();
 
-        // --- Icon ---
+        // 啟用離線持久化 (Offline Persistence)
+        db.enablePersistence({ synchronizeTabs: true }).catch(err => {
+            if (err.code == 'failed-precondition') {
+                console.log('多個分頁開啟中，持久化僅在第一個分頁啟用');
+            } else if (err.code == 'unimplemented') {
+                console.log('瀏覽器不支援離線持久化');
+            }
+        });
+
+        // --- Icon Component ---
         const Icon = ({ name, size=20, className="", ...props }) => {
             const ref = useRef(null);
             useEffect(() => {
@@ -222,20 +239,7 @@
             );
         };
 
-        // --- Common Components ---
-        const FloatingDock = ({ current, setView }) => {
-            const tabs = [
-                { id: 'accounting', label: '記數', icon: 'Calculator' },
-                { id: 'data', label: '資料', icon: 'FolderOpen' },
-                { id: 'video', label: '影片', icon: 'Film' },
-                { id: 'clock', label: '打卡', icon: 'Timer' },
-                { id: 'summary', label: '結算', icon: 'PieChart' },
-                { id: 'settings', label: '設定', icon: 'Settings2' }
-            ];
-            // Removed to fix double nav
-            return null; 
-        };
-
+        // --- Shared Components ---
         const NavBar = ({ current, setView }) => {
             const tabs = [{ id: 'accounting', label: '記數', icon: 'Calculator' }, { id: 'data', label: '資料', icon: 'FolderOpen' }, { id: 'video', label: '影片', icon: 'Film' }, { id: 'clock', label: '打卡', icon: 'Timer' }, { id: 'summary', label: '結算', icon: 'PieChart' }];
             return (
@@ -266,7 +270,7 @@
                             </div>
                         </div>
                         <h1 className="text-base font-black tracking-wide text-white leading-tight">機台收支</h1>
-                        <p className="text-[8px] text-blue-500 font-bold tracking-widest leading-none">(V7.9.1)</p>
+                        <p className="text-[8px] text-blue-500 font-bold tracking-widest leading-none">(V8.1 永久版)</p>
                     </div>
                     <div className="flex flex-col items-center justify-center gap-1 w-1/3">
                         <div className="glass-card px-2 py-0.5 rounded-full flex items-center justify-center gap-1.5 border border-white/10 bg-black/40 w-full max-w-[100px]">
@@ -527,7 +531,7 @@
             const setModal = useContext(ModalContext);
             const toast = useContext(ToastContext);
             useEffect(() => { const t = setInterval(() => setNow(new Date()), 1000); const s = localStorage.getItem('clock_start'); if (s) setStart(new Date(s)); return () => clearInterval(t); }, []);
-            const toggle = () => { if (readOnly) return; if (!start) { const d = new Date(); setStart(d); localStorage.setItem('clock_start', d.toISOString()); toast('已上班'); } else { const end = new Date(); const diffHrs = (end - start) / 3600000; const fullHrs = Math.floor(diffHrs); const mins = (diffHrs - fullHrs) * 60; let pay = fullHrs * 50; if (mins >= 45) pay += 50; else if (mins >= 30) pay += 25; setModal({ type: 'clockout', props: { hours: diffHrs.toFixed(2), range: `${start.toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})} - ${end.toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})}`, pay: pay, onConfirm: () => { onAdd({ type: 'clockin', date: end.toISOString().split('T')[0], amount: pay, notes: `${diffHrs.toFixed(2)}h` }); setStart(null); localStorage.removeItem('clock_start'); toast('已下班結算'); } } }); } };
+            const toggle = () => { if (readOnly) return; if (!start) { const d = new Date(); setStart(d); localStorage.setItem('clock_start', d.toISOString()); toast('已上班打卡'); } else { const end = new Date(); const diffHrs = (end - start) / 3600000; const fullHrs = Math.floor(diffHrs); const mins = (diffHrs - fullHrs) * 60; let pay = fullHrs * 50; if (mins >= 45) pay += 50; else if (mins >= 30) pay += 25; setModal({ type: 'clockout', props: { hours: diffHrs.toFixed(2), range: `${start.toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})} - ${end.toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})}`, pay: pay, onConfirm: () => { onAdd({ type: 'clockin', date: end.toISOString().split('T')[0], amount: pay, notes: `${diffHrs.toFixed(2)}h` }); setStart(null); localStorage.removeItem('clock_start'); toast('已下班結算'); } } }); } };
             return (<div className="flex flex-col items-center py-6"><div className="relative w-72 h-72 flex items-center justify-center mb-8"><div className="absolute inset-0 rounded-full border-2 border-slate-800"></div><div className={`absolute inset-0 rounded-full border-t-2 border-r-2 ${start ? 'border-green-500 animate-spin shadow-[0_0_30px_#10b981]' : 'border-blue-500 animate-[spin_10s_linear_infinite]'}`}></div><div className="absolute inset-4 rounded-full border border-white/5 bg-slate-900/50 backdrop-blur-md flex flex-col items-center justify-center"><div className="text-4xl font-black font-mono-num text-white tracking-widest">{now.toLocaleTimeString([], { hour12: false })}</div><div className="text-blue-400 font-bold mt-2 text-sm">{now.toLocaleDateString()}</div>{start && <div className="text-green-400 font-bold animate-pulse mt-2 tracking-[0.2em] text-glow-green text-xs">ON DUTY</div>}</div></div>{!readOnly && (<button onClick={toggle} className={`w-full max-w-xs py-4 rounded-2xl font-black text-lg tracking-widest shadow-2xl flex items-center justify-center gap-3 active:scale-95 transition-transform ${start ? 'bg-gradient-to-r from-red-600 to-rose-500' : 'bg-gradient-to-r from-blue-600 to-cyan-500'}`}><Icon name="Zap" className={start ? "" : "animate-pulse"}/>{start ? 'CLOCK OUT' : 'CLOCK IN'}</button>)}<div className="mt-6 w-full space-y-2">{records.filter(r => r.type === 'clockin').slice(0, 3).map(r => (<div key={r.id} onClick={() => { if (!readOnly) onEdit(r); }} className="glass-card p-3 rounded-xl flex justify-between text-xs border-l-2 border-yellow-500 cursor-pointer hover:bg-white/5"><span className="text-slate-400">{r.date}</span><span className="text-white">{r.notes}</span><span className="text-yellow-400 font-bold font-mono-num">${r.amount}</span></div>))}</div></div>);
         };
 
@@ -539,48 +543,18 @@
 
         const SettingsPage = ({user, settings, onUpdate, logout, readOnly}) => {
             if(readOnly) return <div className="text-center p-10 text-slate-500">唯讀模式 (Read Only)</div>;
-            const [localSettings, setLocalSettings] = useState(settings);
-            const [newVenue, setNewVenue] = useState('');
-            const [newSource, setNewSource] = useState('');
+            const [newVenue, setNewVenue] = useState(''); const [newSource, setNewSource] = useState('');
             const toast = useContext(ToastContext);
             const setModal = useContext(ModalContext);
-
-            useEffect(() => {
-                setLocalSettings(settings);
-            }, [settings]);
-
-            const updateLocal = (key, value) => {
-                setLocalSettings(prev => ({ ...prev, [key]: value }));
-            };
-
-            const addLocal = (key, val) => {
-                if (val) {
-                    const listKey = key === 'venue' ? 'venues' : 'sources';
-                    const newList = [...localSettings[listKey], val];
-                    updateLocal(listKey, newList);
-                    if (key === 'venue') setNewVenue(''); else setNewSource('');
-                }
-            };
-
-            const delLocal = (key, val) => {
-                 setModal({
+            
+            const add = (k,v) => { if(v){onUpdate({...settings,[k]:[...settings[k],v]}); k==='venues'?setNewVenue(''):setNewSource(''); toast('已新增');} };
+            const del = (k,v) => { 
+                setModal({
                     type: 'confirm',
-                    props: {
-                        title: '刪除選項?',
-                        message: `確定刪除 "${val}" 嗎? (需按儲存生效)`,
-                        onConfirm: () => {
-                             const listKey = key === 'venue' ? 'venues' : 'sources';
-                             const newList = localSettings[listKey].filter(x => x !== val);
-                             updateLocal(listKey, newList);
-                        }
-                    }
+                    props: { title: '刪除選項?', message: `確定刪除 "${v}" 嗎?`, onConfirm: () => { onUpdate({...settings,[k]:settings[k].filter(x=>x!==v)}); toast('已刪除'); } }
                 });
             };
-
-            const handleSaveAll = () => {
-                onUpdate(localSettings);
-                toast('設定已儲存', 'success');
-            };
+            const handleSaveAll = () => { toast('設定已儲存 All Settings Saved', 'success'); };
 
             return (
                 <div className="space-y-4 pb-20">
@@ -591,19 +565,19 @@
                     
                     <div className="glass-card p-5 rounded-3xl space-y-3">
                         <h3 className="font-bold text-slate-300 flex items-center gap-2 text-sm"><Icon name="UserCog" size={16}/> 暱稱</h3>
-                        <div className="hk-input-group"><input value={localSettings.nickname} onChange={e=>updateLocal('nickname', e.target.value)} className="hk-input text-sm"/></div>
+                        <div className="hk-input-group"><input value={settings.nickname} onChange={e=>onUpdate({...settings,nickname:e.target.value})} className="hk-input text-sm"/></div>
                     </div>
 
                     <div className="glass-card p-5 rounded-3xl space-y-3">
                         <h3 className="font-bold text-slate-300 flex items-center gap-2 text-sm"><Icon name="MapPin" size={16}/> 場地</h3>
-                        <div className="flex flex-wrap gap-2">{localSettings.venues.map(v=><span key={v} className="px-2 py-1 bg-blue-900/30 rounded-lg text-[10px] flex items-center gap-2 border border-blue-500/30 text-blue-200">{v}<button onClick={()=>delLocal('venue',v)}><Icon name="X" size={10}/></button></span>)}</div>
-                        <div className="flex gap-2"><div className="hk-input-group flex-1"><input value={newVenue} onChange={e=>setNewVenue(e.target.value)} placeholder="新場地" className="hk-input text-sm py-1.5"/></div><button onClick={()=>addLocal('venue',newVenue)} className="px-3 bg-blue-600 rounded-xl"><Icon name="Plus" size={16}/></button></div>
+                        <div className="flex flex-wrap gap-2">{settings.venues.map(v=><span key={v} className="px-2 py-1 bg-blue-900/30 rounded-lg text-[10px] flex items-center gap-2 border border-blue-500/30 text-blue-200">{v}<button onClick={()=>del('venues',v)}><Icon name="X" size={10}/></button></span>)}</div>
+                        <div className="flex gap-2"><div className="hk-input-group flex-1"><input value={newVenue} onChange={e=>setNewVenue(e.target.value)} placeholder="新場地" className="hk-input text-sm py-1.5"/></div><button onClick={()=>add('venues',newVenue)} className="px-3 bg-blue-600 rounded-xl"><Icon name="Plus" size={16}/></button></div>
                     </div>
 
                     <div className="glass-card p-5 rounded-3xl space-y-3">
                         <h3 className="font-bold text-slate-300 flex items-center gap-2 text-sm"><Icon name="Truck" size={16}/> 來源</h3>
-                        <div className="flex flex-wrap gap-2">{localSettings.sources.map(s=><span key={s} className="px-2 py-1 bg-purple-900/30 rounded-lg text-[10px] flex items-center gap-2 border border-purple-500/30 text-purple-200">{s}<button onClick={()=>delLocal('source',s)}><Icon name="X" size={10}/></button></span>)}</div>
-                        <div className="flex gap-2"><div className="hk-input-group flex-1"><input value={newSource} onChange={e=>setNewSource(e.target.value)} placeholder="新來源" className="hk-input text-sm py-1.5"/></div><button onClick={()=>addLocal('source',newSource)} className="px-3 bg-purple-600 rounded-xl"><Icon name="Plus" size={16}/></button></div>
+                        <div className="flex flex-wrap gap-2">{settings.sources.map(s=><span key={s} className="px-2 py-1 bg-purple-900/30 rounded-lg text-[10px] flex items-center gap-2 border border-purple-500/30 text-purple-200">{s}<button onClick={()=>del('sources',s)}><Icon name="X" size={10}/></button></span>)}</div>
+                        <div className="flex gap-2"><div className="hk-input-group flex-1"><input value={newSource} onChange={e=>setNewSource(e.target.value)} placeholder="新來源" className="hk-input text-sm py-1.5"/></div><button onClick={()=>add('sources',newSource)} className="px-3 bg-purple-600 rounded-xl"><Icon name="Plus" size={16}/></button></div>
                     </div>
                     
                     <button onClick={handleSaveAll} className="w-full py-3 rounded-2xl bg-green-500/10 text-green-400 border border-green-500/20 font-bold hover:bg-green-500/20 transition-colors text-sm shadow-[0_0_15px_rgba(34,197,94,0.1)] flex items-center justify-center gap-2"><Icon name="Save" size={16}/> 儲存設定 Save Settings</button>
@@ -665,10 +639,16 @@
                 auth.onAuthStateChanged(async (u) => {
                     if (u) {
                         setUser({ ...u, isGuest: false, displayName: u.displayName || '未命名' });
-                        loadData(u.uid);
+                        const s = await db.collection('artifacts').doc('recordmachine').collection('users').doc(u.uid).collection('settings').doc('profile').get();
+                        if (s.exists) setSettings(prev => ({...prev, ...s.data()}));
+                        // Real-time listener for own records
+                        db.collection('artifacts').doc('recordmachine').collection('users').doc(u.uid).collection('records').orderBy('date', 'desc').limit(200)
+                            .onSnapshot(snap => {
+                                setRecords(snap.docs.map(d => ({id: d.id, ...d.data()})));
+                            });
                     } else {
                         const g = localStorage.getItem('guest');
-                        if (g) { setUser(JSON.parse(g)); loadGuestData(); }
+                        if (g) { setUser(JSON.parse(g)); setRecords(JSON.parse(localStorage.getItem('guest_records') || '[]')); setSettings(JSON.parse(localStorage.getItem('guest_settings') || JSON.stringify(settings))); }
                     }
                 });
             }, []);
@@ -680,7 +660,13 @@
                             if(doc.exists) setActivePermissions(doc.data().permissions || {});
                             else { alert("分享已停止"); setViewingUser(null); }
                         });
-                    return () => unsub();
+                    // Real-time listener for viewing records
+                    const unsubRecords = db.collection('artifacts').doc('recordmachine').collection('users').doc(viewingUser.ownerUid).collection('records').orderBy('date', 'desc').limit(200)
+                        .onSnapshot(snap => {
+                             setRecords(snap.docs.map(d => ({id: d.id, ...d.data()})));
+                        });
+
+                    return () => { unsub(); unsubRecords(); };
                 } else {
                     setActivePermissions(null);
                 }
@@ -693,27 +679,23 @@
                 setMonthlyEst(total);
             }, [records]);
 
-            const loadData = async (uid) => {
-                const s = await db.collection('artifacts').doc('recordmachine').collection('users').doc(uid).collection('settings').doc('profile').get();
-                if (s.exists) setSettings(prev => ({...prev, ...s.data()}));
-                const r = await db.collection('artifacts').doc('recordmachine').collection('users').doc(uid).collection('records').orderBy('date', 'desc').limit(200).get();
-                setRecords(r.docs.map(d => ({id: d.id, ...d.data()})));
-            };
-
-            const loadGuestData = () => {
-                setRecords(JSON.parse(localStorage.getItem('guest_records') || '[]'));
-                setSettings(JSON.parse(localStorage.getItem('guest_settings') || JSON.stringify(settings)));
-            };
-
             const switchViewUser = async (shareObj) => {
                 if (!shareObj) {
                     setViewingUser(null);
-                    loadData(user.uid);
+                    // Re-bind own listener happens in auth effect, simpler to just reload or re-fetch one time if needed, but onSnapshot persists.
+                    // Actually for switching back, we rely on the main auth effect. But since that runs once, we might need to manually re-fetch or re-bind.
+                    // Simplified: Reload own data once.
+                    if(user && !user.isGuest) {
+                         const r = await db.collection('artifacts').doc('recordmachine').collection('users').doc(user.uid).collection('records').orderBy('date', 'desc').limit(200).get();
+                         setRecords(r.docs.map(d => ({id: d.id, ...d.data()})));
+                         // Re-bind own settings
+                         const s = await db.collection('artifacts').doc('recordmachine').collection('users').doc(user.uid).collection('settings').doc('profile').get();
+                         if(s.exists) setSettings(prev => ({...prev, ...s.data()}));
+                    }
                 } else {
                     setViewingUser(shareObj);
                     setActivePermissions(shareObj.permissions || {});
-                    const r = await db.collection('artifacts').doc('recordmachine').collection('users').doc(shareObj.ownerUid).collection('records').orderBy('date', 'desc').limit(200).get();
-                    setRecords(r.docs.map(d => ({id: d.id, ...d.data()})));
+                    // Settings needed for venue list etc
                     const s = await db.collection('artifacts').doc('recordmachine').collection('users').doc(shareObj.ownerUid).collection('settings').doc('profile').get();
                     if(s.exists) setSettings(prev => ({...prev, ...s.data()}));
                 }
@@ -721,39 +703,34 @@
 
             const handleAdd = async (d) => { 
                 const nr={...d,id:Math.random().toString(36).slice(2),createdAt:new Date().toISOString()}; 
-                const ns=[nr,...records]; 
-                setRecords(ns); 
                 if(!user.isGuest) {
                     await db.collection('artifacts').doc('recordmachine').collection('users').doc(user.uid).collection('records').doc(nr.id).set(nr); 
                 } else {
-                    localStorage.setItem('guest_records',JSON.stringify(ns)); 
+                    const ns=[nr,...records]; setRecords(ns); localStorage.setItem('guest_records',JSON.stringify(ns)); 
                 }
             };
 
             const handleUpdate = async (d) => { 
-                const ns=records.map(r=>r.id===d.id?d:r); 
-                setRecords(ns); 
                 if(!user.isGuest) {
                     await db.collection('artifacts').doc('recordmachine').collection('users').doc(user.uid).collection('records').doc(d.id).set(d,{merge:true}); 
                 } else {
-                    localStorage.setItem('guest_records',JSON.stringify(ns)); 
+                    const ns=records.map(r=>r.id===d.id?d:r); setRecords(ns); localStorage.setItem('guest_records',JSON.stringify(ns)); 
                 }
                 setEditingRecord(null); 
             };
 
             const handleDelete = async (id) => { 
                 if(!confirm("刪除?")) return; 
-                const ns=records.filter(r=>r.id!==id); 
-                setRecords(ns); 
                 if(!user.isGuest) {
                     await db.collection('artifacts').doc('recordmachine').collection('users').doc(user.uid).collection('records').doc(id).delete(); 
                 } else {
-                    localStorage.setItem('guest_records',JSON.stringify(ns)); 
+                    const ns=records.filter(r=>r.id!==id); setRecords(ns); localStorage.setItem('guest_records',JSON.stringify(ns)); 
                 }
                 setEditingRecord(null); 
             };
             
             const handleSettingsUpdate = async (newSettings) => {
+                // Optimistic UI update
                 setSettings(newSettings);
                 if (user.isGuest) {
                     localStorage.setItem('guest_settings', JSON.stringify(newSettings));
@@ -761,7 +738,7 @@
                     try {
                         await db.collection('artifacts').doc('recordmachine').collection('users').doc(user.uid).collection('settings').doc('profile').set(newSettings, {merge:true});
                     } catch (e) {
-                        alert("設定儲存失敗 (權限錯誤或網路問題)");
+                        alert("設定儲存失敗: " + e.message);
                     }
                 }
             };
