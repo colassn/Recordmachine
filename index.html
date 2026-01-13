@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>機台收支管理系統 Pro V10.2</title>
+    <title>機台收支管理系統 V10.3</title>
     
     <!-- React & Libraries -->
     <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
@@ -32,7 +32,6 @@
             overscroll-behavior-y: none;
         }
 
-        /* --- 經典動態背景 --- */
         .cyber-bg {
             position: fixed;
             top: 0; left: 0; width: 100vw; height: 100vh;
@@ -50,7 +49,6 @@
             opacity: 0.4;
         }
 
-        /* --- 經典玻璃擬態 --- */
         .glass-nav {
             background: rgba(30, 30, 35, 0.8);
             border: 1px solid rgba(255, 255, 255, 0.1);
@@ -87,7 +85,6 @@
             box-shadow: 0 10px 30px rgba(0,0,0,0.5);
         }
 
-        /* --- 經典輸入框 --- */
         .hk-input-group {
             position: relative;
             background: rgba(0,0,0,0.4);
@@ -140,16 +137,12 @@
         const auth = firebase.auth();
         const db = firebase.firestore();
 
-        // 嘗試啟用離線持久化 (Best Effort)
+        // 離線持久化 (Best Effort)
         try {
             db.enablePersistence({ synchronizeTabs: true }).catch(err => {
-                if (err.code == 'failed-precondition') {
-                   console.log('Persistence failed: Multiple tabs open');
-                } else if (err.code == 'unimplemented') {
-                   console.log('Persistence failed: Browser not supported');
-                }
+                console.log('Persistence disabled:', err.code);
             });
-        } catch(e) { console.log("Persistence init skipped"); }
+        } catch(e) { console.log("Persistence check skipped"); }
 
         // --- Icon ---
         const Icon = ({ name, size=20, className="", ...props }) => {
@@ -264,7 +257,7 @@
                             </div>
                         </div>
                         <h1 className="text-base font-black tracking-wide text-white leading-tight mt-1">機台收支</h1>
-                        <p className="text-[8px] text-blue-500 font-bold tracking-widest leading-none">(V10.2)</p>
+                        <p className="text-[8px] text-blue-500 font-bold tracking-widest leading-none">(V10.3)</p>
                     </div>
                     
                     {/* 中間卡片 */}
@@ -431,7 +424,7 @@
                             {record.type === 'machine' && (
                                 <>
                                     <div className="hk-input-group border-green-500/30"><input type="number" value={form.amount} onChange={e=>setForm({...form, amount:Number(e.target.value)})} className="hk-input text-green-400 font-bold" /></div>
-                                    <div className="hk-input-group"><select value={form.venue} onChange={e=>setForm({...form, venue:e.target.value})} className="hk-input bg-transparent text-white">{settings.venues.map(v=><option key={v} value={v} className="bg-slate-900">{v}</option>)}</select></div>
+                                    <div className="hk-input-group"><select value={form.venue} onChange={e=>setForm({...form, venue:e.target.value})} className="hk-input bg-transparent text-white">{(settings.venues || []).map(v=><option key={v} value={v} className="bg-slate-900">{v}</option>)}</select></div>
                                     <div className="hk-input-group"><input value={form.notes} onChange={e=>setForm({...form, notes:e.target.value})} className="hk-input" placeholder="備註" /></div>
                                 </>
                             )}
@@ -480,7 +473,7 @@
             return (
                 <div className="space-y-4">
                     <div className="flex gap-3 p-1 bg-slate-900/50 rounded-2xl border border-white/5">
-                        {['machine','stock'].map(m=><button key={m} onClick={()=>setMode(m)} className={`flex-1 py-2 rounded-xl font-bold flex items-center justify-center gap-2 transition-all text-sm ${mode===m?'bg-blue-600 shadow-lg text-white':'text-slate-500'}`}><Icon name={m==='machine'?'Gamepad2':'Package'} size={20}/>{m==='machine'?'機台收入':'網上入貨'}</button>)}
+                        {['machine','stock'].map(m=><button key={m} onClick={()=>setMode(m)} className={`flex-1 py-2 rounded-xl font-bold flex items-center justify-center gap-2 transition-all text-sm ${mode===m?'bg-blue-600 shadow-lg text-white':'text-slate-500'}`}><Icon name={m==='machine'?'Gamepad2':'Package'} size={16}/>{m==='machine'?'機台收入':'網上入貨'}</button>)}
                     </div>
                     {nav}
                     {!readOnly && (
@@ -500,8 +493,8 @@
                         </div>
                     )}
                     <div className="space-y-3 pb-6">
-                        <div className="text-[10px] font-bold text-slate-500 ml-2 tracking-widest uppercase">所有活動 Recent</div>
-                        {records.slice(0,20).map(r=>(<div key={r.id} onClick={()=>!readOnly && onEdit(r)} className="glass-card p-3 rounded-2xl flex items-center justify-between cursor-pointer hover:bg-white/5 border-l-2 border-l-transparent hover:border-l-blue-500"><div className="flex items-center gap-3"><div className={`p-2 rounded-xl ${r.type==='stock'?'bg-red-500/20 text-red-400':'bg-emerald-500/20 text-emerald-400'}`}><Icon name={r.type==='stock'?'Package':r.type==='video'?'Film':r.type==='clockin'?'Timer':'Gamepad2'} size={16}/></div><div><div className="font-bold text-xs">{r.venue||r.itemName||r.title||'打卡'}</div><div className="text-[9px] text-slate-400">{r.date}</div></div></div><div className={`font-mono-num font-bold text-sm ${r.type==='stock'?'text-red-400':'text-green-400'}`}>{r.type==='stock'?'-':'+'}${r.amount}</div></div>))}
+                        <div className="text-[10px] font-bold text-slate-500 ml-2 tracking-widest uppercase">Recent</div>
+                        {records.slice(0,5).map(r=>(<div key={r.id} onClick={()=>!readOnly && onEdit(r)} className="glass-card p-3 rounded-2xl flex items-center justify-between cursor-pointer hover:bg-white/5 border-l-2 border-l-transparent hover:border-l-blue-500"><div className="flex items-center gap-3"><div className={`p-2 rounded-xl ${r.type==='stock'?'bg-red-500/20 text-red-400':'bg-emerald-500/20 text-emerald-400'}`}><Icon name={r.type==='stock'?'Package':'Gamepad2'} size={16}/></div><div><div className="font-bold text-xs">{r.venue||r.itemName||r.title||'打卡'}</div><div className="text-[9px] text-slate-400">{r.date}</div></div></div><div className={`font-mono-num font-bold text-sm ${r.type==='stock'?'text-red-400':'text-green-400'}`}>{r.type==='stock'?'-':'+'}${r.amount}</div></div>))}
                     </div>
                 </div>
             );
@@ -580,18 +573,62 @@
 
         const SettingsPage = ({user, settings, onUpdate, logout, readOnly}) => {
             if(readOnly) return <div className="text-center p-10 text-slate-500">唯讀模式 (Read Only)</div>;
-            const [newVenue, setNewVenue] = useState(''); const [newSource, setNewSource] = useState('');
+            
+            // Local state buffer for edits
+            const [localSettings, setLocalSettings] = useState(settings);
+            const [newVenue, setNewVenue] = useState(''); 
+            const [newSource, setNewSource] = useState('');
             const toast = useContext(ToastContext);
             const setModal = useContext(ModalContext);
-            
-            const add = (k,v) => { if(v){onUpdate({...settings,[k]:[...(settings[k]||[]),v]}); k==='venues'?setNewVenue(''):setNewSource(''); toast('已新增');} };
-            const del = (k,v) => { 
+
+            // Sync with parent when settings change (e.g. initial load)
+            useEffect(() => {
+                setLocalSettings(settings);
+            }, [settings]);
+
+            const updateLocal = (key, value) => {
+                setLocalSettings(prev => ({ ...prev, [key]: value }));
+            };
+
+            const addLocal = (key, val) => {
+                if (val) {
+                    const listKey = key === 'venue' ? 'venues' : 'sources';
+                    const currentList = localSettings[listKey] || [];
+                    updateLocal(listKey, [...currentList, val]);
+                    if (key === 'venue') setNewVenue(''); else setNewSource('');
+                }
+            };
+
+            const delLocal = (key, val) => { 
                 setModal({
                     type: 'confirm',
-                    props: { title: '刪除選項?', message: `確定刪除 "${v}" 嗎? (需按儲存生效)`, onConfirm: () => { onUpdate({...settings,[k]:settings[k].filter(x=>x!==v)}); toast('已刪除'); } }
+                    props: { 
+                        title: '刪除選項?', 
+                        message: `確定刪除 "${val}" 嗎? (需按儲存生效)`, 
+                        onConfirm: () => { 
+                            const listKey = key === 'venue' ? 'venues' : 'sources';
+                            const currentList = localSettings[listKey] || [];
+                            updateLocal(listKey, currentList.filter(x => x !== val));
+                        } 
+                    }
                 });
             };
-            const handleSaveAll = () => { toast('設定已儲存 All Settings Saved', 'success'); };
+            
+            const handleSaveAll = () => { 
+                // Auto-commit pending inputs
+                let finalSettings = { ...localSettings };
+                if (newVenue) {
+                    finalSettings.venues = [...(finalSettings.venues || []), newVenue];
+                    setNewVenue('');
+                }
+                if (newSource) {
+                    finalSettings.sources = [...(finalSettings.sources || []), newSource];
+                    setNewSource('');
+                }
+                
+                onUpdate(finalSettings); 
+                toast('設定已儲存', 'success'); 
+            };
 
             return (
                 <div className="space-y-4 pb-20">
@@ -602,19 +639,19 @@
                     
                     <div className="glass-card p-5 rounded-3xl space-y-3">
                         <h3 className="font-bold text-slate-300 flex items-center gap-2 text-sm"><Icon name="UserCog" size={16}/> 暱稱</h3>
-                        <div className="hk-input-group"><input value={settings.nickname} onChange={e=>onUpdate({...settings,nickname:e.target.value})} className="hk-input text-sm"/></div>
+                        <div className="hk-input-group"><input value={localSettings.nickname || ''} onChange={e=>updateLocal('nickname', e.target.value)} className="hk-input text-sm"/></div>
                     </div>
 
                     <div className="glass-card p-5 rounded-3xl space-y-3">
                         <h3 className="font-bold text-slate-300 flex items-center gap-2 text-sm"><Icon name="MapPin" size={16}/> 場地</h3>
-                        <div className="flex flex-wrap gap-2">{settings.venues.map(v=><span key={v} className="px-2 py-1 bg-blue-900/30 rounded-lg text-[10px] flex items-center gap-2 border border-blue-500/30 text-blue-200">{v}<button onClick={()=>del('venues',v)}><Icon name="X" size={10}/></button></span>)}</div>
-                        <div className="flex gap-2"><div className="hk-input-group flex-1"><input value={newVenue} onChange={e=>setNewVenue(e.target.value)} placeholder="新場地" className="hk-input text-sm py-1.5"/></div><button onClick={()=>add('venues',newVenue)} className="px-3 bg-blue-600 rounded-xl"><Icon name="Plus" size={16}/></button></div>
+                        <div className="flex flex-wrap gap-2">{(localSettings.venues || []).map(v=><span key={v} className="px-2 py-1 bg-blue-900/30 rounded-lg text-[10px] flex items-center gap-2 border border-blue-500/30 text-blue-200">{v}<button onClick={()=>delLocal('venue',v)}><Icon name="X" size={10}/></button></span>)}</div>
+                        <div className="flex gap-2"><div className="hk-input-group flex-1"><input value={newVenue} onChange={e=>setNewVenue(e.target.value)} placeholder="新場地" className="hk-input text-sm py-1.5"/></div><button onClick={()=>addLocal('venue',newVenue)} className="px-3 bg-blue-600 rounded-xl"><Icon name="Plus" size={16}/></button></div>
                     </div>
 
                     <div className="glass-card p-5 rounded-3xl space-y-3">
                         <h3 className="font-bold text-slate-300 flex items-center gap-2 text-sm"><Icon name="Truck" size={16}/> 來源</h3>
-                        <div className="flex flex-wrap gap-2">{settings.sources.map(s=><span key={s} className="px-2 py-1 bg-purple-900/30 rounded-lg text-[10px] flex items-center gap-2 border border-purple-500/30 text-purple-200">{s}<button onClick={()=>del('sources',s)}><Icon name="X" size={10}/></button></span>)}</div>
-                        <div className="flex gap-2"><div className="hk-input-group flex-1"><input value={newSource} onChange={e=>setNewSource(e.target.value)} placeholder="新來源" className="hk-input text-sm py-1.5"/></div><button onClick={()=>add('sources',newSource)} className="px-3 bg-purple-600 rounded-xl"><Icon name="Plus" size={16}/></button></div>
+                        <div className="flex flex-wrap gap-2">{(localSettings.sources || []).map(s=><span key={s} className="px-2 py-1 bg-purple-900/30 rounded-lg text-[10px] flex items-center gap-2 border border-purple-500/30 text-purple-200">{s}<button onClick={()=>delLocal('source',s)}><Icon name="X" size={10}/></button></span>)}</div>
+                        <div className="flex gap-2"><div className="hk-input-group flex-1"><input value={newSource} onChange={e=>setNewSource(e.target.value)} placeholder="新來源" className="hk-input text-sm py-1.5"/></div><button onClick={()=>addLocal('source',newSource)} className="px-3 bg-purple-600 rounded-xl"><Icon name="Plus" size={16}/></button></div>
                     </div>
                     
                     <button onClick={handleSaveAll} className="w-full py-3 rounded-2xl bg-green-500/10 text-green-400 border border-green-500/20 font-bold hover:bg-green-500/20 transition-colors text-sm shadow-[0_0_15px_rgba(34,197,94,0.1)] flex items-center justify-center gap-2"><Icon name="Save" size={16}/> 儲存設定 Save Settings</button>
@@ -677,8 +714,13 @@
                 const unsubscribe = auth.onAuthStateChanged(async (u) => {
                     if (u) {
                         setUser({ ...u, isGuest: false, displayName: u.displayName || '未命名' });
-                        const s = await db.collection('artifacts').doc('recordmachine').collection('users').doc(u.uid).collection('settings').doc('profile').get();
-                        if (s.exists) setSettings(prev => ({...prev, ...s.data()}));
+                        // Listen to Settings
+                        db.collection('artifacts').doc('recordmachine').collection('users').doc(u.uid).collection('settings').doc('profile')
+                            .onSnapshot(doc => {
+                                if (doc.exists) setSettings(doc.data());
+                            });
+                        
+                        // Listen to Records
                         db.collection('artifacts').doc('recordmachine').collection('users').doc(u.uid).collection('records').orderBy('date', 'desc').limit(200)
                             .onSnapshot(snap => {
                                 setRecords(snap.docs.map(d => ({id: d.id, ...d.data()})));
@@ -703,7 +745,13 @@
                         .onSnapshot(snap => {
                              setRecords(snap.docs.map(d => ({id: d.id, ...d.data()})));
                         });
-                    return () => { unsub(); unsubRecords(); };
+                    // Also listen to their settings to get venues list etc
+                    const unsubSettings = db.collection('artifacts').doc('recordmachine').collection('users').doc(viewingUser.ownerUid).collection('settings').doc('profile')
+                        .onSnapshot(doc => {
+                            if(doc.exists) setSettings(doc.data());
+                        });
+
+                    return () => { unsub(); unsubRecords(); unsubSettings(); };
                 } else {
                     setActivePermissions(null);
                 }
@@ -720,18 +768,15 @@
                 if (!shareObj) {
                     setViewingUser(null);
                     if(user && !user.isGuest) {
-                         const s = await db.collection('artifacts').doc('recordmachine').collection('users').doc(user.uid).collection('settings').doc('profile').get();
-                         if(s.exists) setSettings(prev => ({...prev, ...s.data()}));
-                         db.collection('artifacts').doc('recordmachine').collection('users').doc(user.uid).collection('records').orderBy('date', 'desc').limit(200)
-                            .onSnapshot(snap => {
-                                setRecords(snap.docs.map(d => ({id: d.id, ...d.data()})));
-                            });
+                         // Reset listener back to own data is handled by auth effect, but we might need to trigger re-fetch for cleaner UX or just rely on existing listeners if they persist. 
+                         // Simplest: Force reload page or re-init listeners. 
+                         // Actually, our auth listener only runs once. We need to manually re-subscribe to own data.
+                         // For simplicity in this version, we reload page to reset state safely.
+                         window.location.reload();
                     }
                 } else {
                     setViewingUser(shareObj);
-                    setActivePermissions(shareObj.permissions || {});
-                    const s = await db.collection('artifacts').doc('recordmachine').collection('users').doc(shareObj.ownerUid).collection('settings').doc('profile').get();
-                    if(s.exists) setSettings(prev => ({...prev, ...s.data()}));
+                    // The useEffect [viewingUser] will handle the data fetching
                 }
             };
 
@@ -764,8 +809,9 @@
             };
             
             const handleSettingsUpdate = async (newSettings) => {
-                setSettings(newSettings);
+                // Optimistic UI update not needed as we have real-time listener
                 if (user.isGuest) {
+                    setSettings(newSettings);
                     localStorage.setItem('guest_settings', JSON.stringify(newSettings));
                 } else {
                     try {
