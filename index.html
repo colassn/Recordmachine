@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>機台收支管理系統 Pro V7.8</title>
+    <title>機台收支管理系統 Pro V7.9</title>
     
     <!-- React & Libraries -->
     <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
@@ -32,6 +32,7 @@
             overscroll-behavior-y: none;
         }
 
+        /* --- 高級動態背景 --- */
         .cyber-bg {
             position: fixed;
             top: 0; left: 0; width: 100vw; height: 100vh;
@@ -49,14 +50,7 @@
             opacity: 0.4;
         }
 
-        .glass-dock {
-            background: rgba(18, 18, 23, 0.85);
-            backdrop-filter: blur(20px);
-            border: 1px solid rgba(255, 255, 255, 0.08);
-            border-top: 1px solid rgba(255, 255, 255, 0.15);
-            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
-        }
-        
+        /* --- 玻璃擬態組件 --- */
         .glass-nav {
             background: rgba(30, 30, 35, 0.6);
             border: 1px solid rgba(255, 255, 255, 0.1);
@@ -92,6 +86,7 @@
             box-shadow: 0 10px 30px rgba(0,0,0,0.5);
         }
 
+        /* --- 輸入框 --- */
         .hk-input-group {
             position: relative;
             background: rgba(0,0,0,0.3);
@@ -117,6 +112,8 @@
         .font-mono-num { font-family: 'JetBrains Mono', monospace; }
         .no-scrollbar::-webkit-scrollbar { display: none; }
         .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+        
+        .text-glow-green { text-shadow: 0 0 10px rgba(16, 185, 129, 0.5); }
         .pt-safe-top { padding-top: env(safe-area-inset-top, 20px); }
     </style>
 </head>
@@ -129,6 +126,7 @@
         const { useState, useEffect, useMemo, useRef, createContext, useContext } = React;
         const { motion, AnimatePresence } = window.Motion;
 
+        // --- Config ---
         const firebaseConfig = {
             apiKey: "AIzaSyBJ0qf4FyJ-Ln8uTlVfyqq84IAeUsTWSCo",
             authDomain: "recordmachine.firebaseapp.com",
@@ -138,11 +136,11 @@
             appId: "1:817708522720:web:5e3b876ce170012d53c485",
             measurementId: "G-WR49R47LN1"
         };
-
         if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
         const auth = firebase.auth();
         const db = firebase.firestore();
 
+        // --- Icon ---
         const Icon = ({ name, size=20, className="", ...props }) => {
             const ref = useRef(null);
             useEffect(() => {
@@ -158,9 +156,11 @@
             return <span ref={ref} {...props} className={`inline-flex items-center justify-center ${className}`} />;
         };
 
+        // --- Contexts ---
         const ToastContext = createContext();
         const ModalContext = createContext();
 
+        // --- UI Provider ---
         const UIProvider = ({ children }) => {
             const [toasts, setToasts] = useState([]);
             const [modal, setModal] = useState(null);
@@ -222,34 +222,11 @@
             );
         };
 
-        const FloatingDock = ({ current, setView }) => {
-            const tabs = [
-                { id: 'accounting', label: '記數', icon: 'Calculator' },
-                { id: 'data', label: '資料', icon: 'FolderOpen' },
-                { id: 'video', label: '影片', icon: 'Film' },
-                { id: 'clock', label: '打卡', icon: 'Timer' },
-                { id: 'summary', label: '結算', icon: 'PieChart' },
-                { id: 'settings', label: '設定', icon: 'Settings2' }
-            ];
-            return (
-                <div className="fixed bottom-4 inset-x-4 z-50">
-                    <div className="glass-dock rounded-2xl h-16 flex justify-between items-center px-2 max-w-md mx-auto">
-                        {tabs.map((tab) => (
-                            <button key={tab.id} onClick={() => setView(tab.id)} className={`relative flex flex-col items-center justify-center flex-1 h-full group`}>
-                                {current === tab.id && <motion.div layoutId="dock-glow" className="absolute top-1 w-8 h-8 bg-blue-500/30 rounded-full blur-md" />}
-                                <div className={`relative transition-all duration-300 transform ${current === tab.id ? '-translate-y-1 text-white' : 'text-slate-500'}`}><Icon name={tab.icon} size={20} /></div>
-                                <span className={`text-[9px] font-bold mt-0.5 transition-colors ${current === tab.id ? 'text-blue-300' : 'text-slate-600'}`}>{tab.label}</span>
-                            </button>
-                        ))}
-                    </div>
-                </div>
-            );
-        };
-
+        // --- Shared Components ---
         const NavBar = ({ current, setView }) => {
             const tabs = [{ id: 'accounting', label: '記數', icon: 'Calculator' }, { id: 'data', label: '資料', icon: 'FolderOpen' }, { id: 'video', label: '影片', icon: 'Film' }, { id: 'clock', label: '打卡', icon: 'Timer' }, { id: 'summary', label: '結算', icon: 'PieChart' }];
             return (
-                <div className="glass-nav mb-4 overflow-x-auto no-scrollbar">
+                <div className="glass-nav mb-6 overflow-x-auto no-scrollbar">
                     {tabs.map((tab) => (
                         <button key={tab.id} onClick={() => setView(tab.id)} className={`relative flex flex-col items-center justify-center min-w-[60px] py-2 rounded-xl transition-all duration-300 ${current === tab.id ? 'bg-blue-600/20 text-blue-400' : 'text-slate-500 hover:text-slate-300'}`}>
                             <Icon name={tab.icon} size={18} /><span className="text-[10px] font-bold mt-1">{tab.label}</span>
@@ -276,7 +253,7 @@
                             </div>
                         </div>
                         <h1 className="text-base font-black tracking-wide text-white leading-tight">機台收支</h1>
-                        <p className="text-[8px] text-blue-500 font-bold tracking-widest leading-none">(V7.8 完美版)</p>
+                        <p className="text-[8px] text-blue-500 font-bold tracking-widest leading-none">(V7.9 修正版)</p>
                     </div>
                     <div className="flex flex-col items-center justify-center gap-1 w-1/3">
                         <div className="glass-card px-2 py-0.5 rounded-full flex items-center justify-center gap-1.5 border border-white/10 bg-black/40 w-full max-w-[100px]">
@@ -388,7 +365,7 @@
                                                             <button key={k} onClick={()=>togglePerm(s.id,k,a)} className={`h-7 rounded flex items-center justify-center ${a?'bg-green-500/20 text-green-400':'bg-red-500/10 text-slate-600'}`}>
                                                                 <Icon name={icons[k]} size={12}/>
                                                             </button>
-                                                        );
+                                                        )
                                                     })}
                                                 </div>
                                             </div>
@@ -653,30 +630,8 @@
         };
 
         const Login = ({ onLogin }) => {
-            const [email, setEmail] = useState(''); 
-            const [pass, setPass] = useState('');
-            const authAct = async (t) => { 
-                try { 
-                    if (t === 'g') {
-                        await auth.signInWithPopup(new firebase.auth.GoogleAuthProvider());
-                    } else if (t === 'guest') {
-                        localStorage.setItem('guest', JSON.stringify({uid:'guest',displayName:'Guest',isGuest:true})); 
-                        onLogin({uid:'guest',displayName:'Guest',isGuest:true});
-                    } else {
-                        await auth.signInWithEmailAndPassword(email, pass);
-                    }
-                } catch(e) {
-                    if (e.code === 'auth/popup-closed-by-user') {
-                        alert("Google 登入視窗已關閉。請不要在登入完成前關閉視窗。");
-                    } else if (e.code === 'auth/operation-not-allowed') {
-                        alert("Google 登入未啟用。請至 Firebase Console > Authentication > Sign-in method 開啟 Google。");
-                    } else if (e.code === 'auth/unauthorized-domain') {
-                        alert(`網域未授權。\n請至 Firebase Console > Authentication > Settings > Authorized Domains\n新增此網域: ${window.location.hostname}`);
-                    } else {
-                        alert("登入失敗: " + e.message);
-                    }
-                } 
-            };
+            const [email, setEmail] = useState(''); const [pass, setPass] = useState('');
+            const authAct = async (t) => { try { if(t==='g') await auth.signInWithPopup(new firebase.auth.GoogleAuthProvider()); else if(t==='guest') {localStorage.setItem('guest',JSON.stringify({uid:'guest',displayName:'Guest',isGuest:true})); onLogin({uid:'guest',displayName:'Guest',isGuest:true});} else await auth.signInWithEmailAndPassword(email,pass); } catch(e){alert(e.message);} };
             
             return (
                 <div className="min-h-screen flex items-center justify-center p-6 z-50 relative">
@@ -845,8 +800,6 @@
                         </AnimatePresence>
                     </main>
 
-                    <FloatingDock current={view} setView={setView} />
-                    
                     <AnimatePresence>
                         {editingRecord && !viewingUser && <EditModal record={editingRecord} onClose={()=>setEditingRecord(null)} onUpdate={handleUpdate} onDelete={handleDelete} settings={settings} />}
                         {showShareModal && <ShareCenter user={user} onClose={()=>setShowShareModal(false)} onSwitchUser={switchViewUser} />}
