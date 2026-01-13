@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>機台收支管理系統 Pro V9.0</title>
+    <title>機台收支管理系統 Pro V9.1</title>
     
     <!-- React & Libraries -->
     <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
@@ -32,6 +32,7 @@
             overscroll-behavior-y: none;
         }
 
+        /* --- 高級動態背景 --- */
         .cyber-bg {
             position: fixed;
             top: 0; left: 0; width: 100vw; height: 100vh;
@@ -49,6 +50,7 @@
             opacity: 0.4;
         }
 
+        /* --- 玻璃擬態組件 --- */
         .glass-nav {
             background: rgba(30, 30, 35, 0.6);
             border: 1px solid rgba(255, 255, 255, 0.1);
@@ -84,6 +86,7 @@
             box-shadow: 0 10px 30px rgba(0,0,0,0.5);
         }
 
+        /* --- 輸入框 --- */
         .hk-input-group {
             position: relative;
             background: rgba(0,0,0,0.3);
@@ -136,7 +139,8 @@
         const auth = firebase.auth();
         const db = firebase.firestore();
         
-        db.enablePersistence({ synchronizeTabs: true }).catch(err => console.log(err.code));
+        // 啟用離線支援，忽略錯誤（防止多開分頁報錯）
+        db.enablePersistence({ synchronizeTabs: true }).catch(err => console.log("Persistence:", err.code));
 
         // --- Icon ---
         const Icon = ({ name, size=20, className="", ...props }) => {
@@ -220,7 +224,7 @@
             );
         };
 
-        // --- Shared Components ---
+        // --- Components ---
         const NavBar = ({ current, setView }) => {
             const tabs = [
                 { id: 'accounting', label: '記數', icon: 'Calculator' }, 
@@ -262,7 +266,7 @@
                             </div>
                         </div>
                         <h1 className="text-base font-black tracking-wide text-white leading-tight">機台收支</h1>
-                        <p className="text-[8px] text-blue-500 font-bold tracking-widest leading-none">(V9.0)</p>
+                        <p className="text-[8px] text-blue-500 font-bold tracking-widest leading-none">(V9.1)</p>
                     </div>
                     <div className="flex flex-col items-center justify-center gap-1 w-1/3">
                         <div className="glass-card px-2 py-0.5 rounded-full flex items-center justify-center gap-1.5 border border-white/10 bg-black/40 w-full max-w-[100px]">
@@ -342,7 +346,7 @@
             };
 
             return (
-                <div className="fixed inset-0 z-[100] bg-black/90 backdrop-blur-md flex items-center justify-center p-4">
+                <div className="fixed inset-0 z-[70] bg-black/90 backdrop-blur-md flex items-center justify-center p-4">
                     <motion.div initial={{scale:0.95,opacity:0}} animate={{scale:1,opacity:1}} className="glass-modal w-full max-w-lg rounded-3xl p-5 h-[70vh] flex flex-col border border-slate-700/50 bg-[#1a1a1d]">
                         <div className="flex justify-between items-center mb-4">
                             <h2 className="text-lg font-bold flex items-center gap-2"><Icon name="Share2" className="text-blue-400" size={20}/> 分享中樞</h2>
@@ -405,12 +409,7 @@
             const [form, setForm] = useState({ ...record });
             const toast = useContext(ToastContext);
             const setModal = useContext(ModalContext);
-            
-            const handleSave = () => { 
-                onUpdate({ ...record, ...form }); 
-                toast('更新成功'); 
-            };
-            
+            const handleSave = () => { onUpdate({ ...record, ...form }); toast('更新成功'); };
             const handleDelete = () => {
                 setModal({
                     type: 'confirm',
@@ -504,97 +503,22 @@
         const DataFolder = ({ records, onEdit }) => {
             const [viewYear, setViewYear] = useState(null);
             const [viewMonth, setViewMonth] = useState(null);
-            const tree = useMemo(() => { 
-                const t={}; 
-                records.filter(r=>['machine','stock'].includes(r.type)).forEach(r=>{
-                    const [y,m] = r.date.split('-'); 
-                    if(!t[y]) t[y]={total:0,months:{}}; 
-                    if(!t[y].months[m]) t[y].months[m]={inc:0,exp:0,items:[]}; 
-                    const v=Number(r.amount); 
-                    if(r.type==='machine'){t[y].total+=v;t[y].months[m].inc+=v;}
-                    else{t[y].total-=v;t[y].months[m].exp+=v;} 
-                    t[y].months[m].items.push(r);
-                }); 
-                return t;
-            },[records]);
+            const tree = useMemo(() => { const t={}; records.filter(r=>['machine','stock'].includes(r.type)).forEach(r=>{const[y,m]=r.date.split('-'); if(!t[y])t[y]={total:0,months:{}}; if(!t[y].months[m])t[y].months[m]={inc:0,exp:0,items:[]}; const v=Number(r.amount); if(r.type==='machine'){t[y].total+=v;t[y].months[m].inc+=v;}else{t[y].total-=v;t[y].months[m].exp+=v;} t[y].months[m].items.push(r);}); return t;},[records]);
 
             if(viewMonth && viewYear) {
                 const md = tree[viewYear]?.months[viewMonth] || {items:[]};
-                return (
-                    <div className="space-y-4">
-                        <button onClick={()=>setViewMonth(null)} className="text-xs font-bold text-slate-400 mb-2 flex items-center gap-1 hover:text-white"><Icon name="ArrowLeft" size={14}/> Back</button>
-                        <h2 className="text-lg font-bold text-blue-400 flex items-center gap-2"><Icon name="FolderOpen" size={18}/> {viewYear} / {viewMonth}</h2>
-                        <div className="space-y-3 pb-20">
-                            {md.items.map(r=>(
-                                <div key={r.id} onClick={()=>{if(onEdit) onEdit(r)}} className="glass-card p-3 rounded-xl flex justify-between items-center cursor-pointer border-l-2 border-slate-600 hover:border-blue-500">
-                                    <div><div className="font-bold text-xs">{r.venue||r.itemName}</div><div className="text-[9px] text-slate-400">{r.date}</div></div>
-                                    <div className={`font-mono-num font-bold text-sm ${r.type==='stock'?'text-red-400':'text-green-400'}`}>${r.amount}</div>
-                                </div>
-                            ))}
-                        </div>
-                    </div>
-                );
+                return (<div className="space-y-4"><button onClick={()=>setViewMonth(null)} className="text-xs font-bold text-slate-400 mb-2 flex items-center gap-1 hover:text-white"><Icon name="ArrowLeft" size={14}/> Back</button><h2 className="text-lg font-bold text-blue-400 flex items-center gap-2"><Icon name="FolderOpen" size={18}/> {viewYear} / {viewMonth}</h2><div className="space-y-3 pb-20">{md.items.map(r=>(<div key={r.id} onClick={()=>{if(onEdit) onEdit(r)}} className="glass-card p-3 rounded-xl flex justify-between items-center cursor-pointer border-l-2 border-slate-600 hover:border-blue-500"><div><div className="font-bold text-xs">{r.venue||r.itemName}</div><div className="text-[9px] text-slate-400">{r.date}</div></div><div className={`font-mono-num font-bold text-sm ${r.type==='stock'?'text-red-400':'text-green-400'}`}>${r.amount}</div></div>))}</div></div>);
             }
             if(viewYear) {
-                return (
-                    <div className="space-y-4">
-                        <button onClick={()=>setViewYear(null)} className="text-xs font-bold text-slate-400 mb-2 flex items-center gap-1 hover:text-white"><Icon name="ArrowLeft" size={14}/> Back</button>
-                        <h2 className="text-lg font-bold text-white flex items-center gap-2"><Icon name="Archive" size={18}/> {viewYear}</h2>
-                        <div className="grid grid-cols-2 gap-3">
-                            {Object.keys(tree[viewYear].months).sort((a,b)=>b-a).map(m=>(
-                                <button key={m} onClick={()=>setViewMonth(m)} className="glass-card p-4 rounded-2xl text-left hover:bg-white/5 transition-all">
-                                    <Icon name="Folder" className="text-yellow-500 mb-2" size={24}/>
-                                    <div className="font-bold text-sm">{m}月</div>
-                                    <div className="text-[10px] font-mono-num text-emerald-400 mt-1">NET: ${tree[viewYear].months[m].inc-tree[viewYear].months[m].exp}</div>
-                                </button>
-                            ))}
-                        </div>
-                    </div>
-                );
+                return (<div className="space-y-4"><button onClick={()=>setViewYear(null)} className="text-xs font-bold text-slate-400 mb-2 flex items-center gap-1 hover:text-white"><Icon name="ArrowLeft" size={14}/> Back</button><h2 className="text-lg font-bold text-white flex items-center gap-2"><Icon name="Archive" size={18}/> {viewYear}</h2><div className="grid grid-cols-2 gap-3">{Object.keys(tree[viewYear].months).sort((a,b)=>b-a).map(m=><button key={m} onClick={()=>setViewMonth(m)} className="glass-card p-4 rounded-2xl text-left hover:bg-white/5 transition-all"><Icon name="Folder" className="text-yellow-500 mb-2" size={24}/><div className="font-bold text-sm">{m}月</div><div className="text-[10px] font-mono-num text-emerald-400 mt-1">NET: ${tree[viewYear].months[m].inc-tree[viewYear].months[m].exp}</div></button>)}</div></div>);
             }
-            return (
-                <div className="space-y-4">
-                    <h2 className="text-lg font-bold flex gap-2 text-white"><Icon name="Database" className="text-blue-500" size={18}/> 存檔</h2>
-                    <div className="grid grid-cols-1 gap-3">
-                        {Object.keys(tree).sort((a,b)=>b-a).map(y=>(
-                            <button key={y} onClick={()=>setViewYear(y)} className="glass-card p-5 rounded-2xl flex justify-between items-center hover:bg-white/5">
-                                <div className="flex items-center gap-3">
-                                    <div className="p-2 bg-blue-900/30 rounded-lg border border-blue-500/30"><Icon name="FolderArchive" className="text-blue-400" size={20}/></div>
-                                    <div className="text-left"><div className="font-bold text-lg text-white">{y}</div><div className="text-[10px] text-slate-400 uppercase">Yearly Total</div></div>
-                                </div>
-                                <div className="font-mono-num font-bold text-emerald-400 text-lg">${tree[y].total}</div>
-                            </button>
-                        ))}
-                    </div>
-                </div>
-            );
+            return (<div className="space-y-4"><h2 className="text-lg font-bold flex gap-2 text-white"><Icon name="Database" className="text-blue-500" size={18}/> 存檔</h2><div className="grid grid-cols-1 gap-3">{Object.keys(tree).sort((a,b)=>b-a).map(y=><button key={y} onClick={()=>setViewYear(y)} className="glass-card p-5 rounded-2xl flex justify-between items-center hover:bg-white/5"><div className="flex items-center gap-3"><div className="p-2 bg-blue-900/30 rounded-lg border border-blue-500/30"><Icon name="FolderArchive" className="text-blue-400" size={20}/></div><div className="text-left"><div className="font-bold text-lg text-white">{y}</div><div className="text-[10px] text-slate-400 uppercase">Yearly Total</div></div></div><div className="font-mono-num font-bold text-emerald-400 text-lg">${tree[y].total}</div></button>)}</div></div>);
         };
 
         const VideoPage = ({ records, onAdd, onEdit, readOnly }) => {
             const [title, setTitle] = useState('');
             const toast = useContext(ToastContext);
-            return (
-                <div className="space-y-4">
-                    <div className="glass-card p-5 rounded-3xl bg-gradient-to-r from-purple-900/40 to-slate-900 border border-purple-500/20">
-                        <div className="flex items-center gap-4 mb-4">
-                            <div className="p-3 bg-purple-600 rounded-xl shadow-[0_0_20px_rgba(147,51,234,0.4)]"><Icon name="Clapperboard" className="text-white" size={24}/></div>
-                            <div><h2 className="font-bold text-lg text-white">影片獎勵</h2><p className="text-[10px] text-purple-300">每條 +$25</p></div>
-                        </div>
-                        {!readOnly && <div className="flex gap-2">
-                            <div className="hk-input-group flex-1"><input value={title} onChange={e=>setTitle(e.target.value)} placeholder="影片標題 Title" className="hk-input text-sm"/></div>
-                            <button onClick={()=>{if(title){onAdd({type:'video',title,date:new Date().toISOString().split('T')[0],amount:25});setTitle(''); toast('已新增');}}} className="bg-purple-600 px-4 rounded-xl text-white shadow-lg"><Icon name="Plus" size={18}/></button>
-                        </div>}
-                    </div>
-                    <div className="grid gap-2">
-                        {records.filter(r=>r.type==='video').map(r=>(
-                            <div key={r.id} onClick={()=>!readOnly && onEdit(r)} className="glass-card p-3 rounded-xl flex justify-between items-center border-l-2 border-purple-500 hover:bg-white/5 cursor-pointer">
-                                <div className="flex items-center gap-3"><Icon name="PlayCircle" className="text-purple-400" size={18}/><div><div className="font-bold text-xs text-white">{r.title}</div><div className="text-[9px] text-slate-500">{r.date}</div></div></div>
-                                <span className="text-purple-400 font-bold font-mono-num text-sm">+$25</span>
-                            </div>
-                        ))}
-                    </div>
-                </div>
-            );
+            return (<div className="space-y-4"><div className="glass-card p-5 rounded-3xl bg-gradient-to-r from-purple-900/40 to-slate-900 border border-purple-500/20"><div className="flex items-center gap-4 mb-4"><div className="p-3 bg-purple-600 rounded-xl shadow-[0_0_20px_rgba(147,51,234,0.4)]"><Icon name="Clapperboard" className="text-white" size={24}/></div><div><h2 className="font-bold text-lg text-white">影片獎勵</h2><p className="text-[10px] text-purple-300">每條 +$25</p></div></div>{!readOnly && <div className="flex gap-2"><div className="hk-input-group flex-1"><input value={title} onChange={e=>setTitle(e.target.value)} placeholder="影片標題 Title" className="hk-input text-sm"/></div><button onClick={()=>{if(title){onAdd({type:'video',title,date:new Date().toISOString().split('T')[0],amount:25});setTitle(''); toast('已新增');}}} className="bg-purple-600 px-4 rounded-xl text-white shadow-lg"><Icon name="Plus" size={18}/></button></div>}</div><div className="grid gap-2">{records.filter(r=>r.type==='video').map(r=><div key={r.id} onClick={()=>!readOnly && onEdit(r)} className="glass-card p-3 rounded-xl flex justify-between items-center border-l-2 border-purple-500 hover:bg-white/5 cursor-pointer"><div className="flex items-center gap-3"><Icon name="PlayCircle" className="text-purple-400" size={18}/><div><div className="font-bold text-xs text-white">{r.title}</div><div className="text-[9px] text-slate-500">{r.date}</div></div></div><span className="text-purple-400 font-bold font-mono-num text-sm">+$25</span></div>)}</div></div>);
         };
 
         const ClockPage = ({ records, onAdd, onEdit, user, readOnly }) => {
@@ -602,7 +526,6 @@
             const [start, setStart] = useState(null);
             const setModal = useContext(ModalContext);
             const toast = useContext(ToastContext);
-            
             useEffect(() => { const t = setInterval(() => setNow(new Date()), 1000); const s = localStorage.getItem('clock_start'); if (s) setStart(new Date(s)); return () => clearInterval(t); }, []);
             
             const toggle = () => { 
@@ -637,6 +560,7 @@
                     }); 
                 } 
             };
+
             return (
                 <div className="flex flex-col items-center py-6">
                     <div className="relative w-72 h-72 flex items-center justify-center mb-8">
@@ -656,7 +580,9 @@
                     <div className="mt-6 w-full space-y-2">
                         {records.filter(r => r.type === 'clockin').slice(0, 3).map(r => (
                             <div key={r.id} onClick={() => { if (!readOnly) onEdit(r); }} className="glass-card p-3 rounded-xl flex justify-between text-xs border-l-2 border-yellow-500 cursor-pointer hover:bg-white/5">
-                                <span className="text-slate-400">{r.date}</span><span className="text-white">{r.notes}</span><span className="text-yellow-400 font-bold font-mono-num">${r.amount}</span>
+                                <span className="text-slate-400">{r.date}</span>
+                                <span className="text-white">{r.notes}</span>
+                                <span className="text-yellow-400 font-bold font-mono-num">${r.amount}</span>
                             </div>
                         ))}
                     </div>
@@ -669,13 +595,22 @@
             const s=records.reduce((a,r)=>{const v=Number(r.amount);if(r.type==='machine')a.m+=v;else if(r.type==='video')a.v+=v;else if(r.type==='clockin')a.c+=v;else if(r.type==='stock')a.s+=v;return a;},{m:0,v:0,c:0,s:0});
             const t=s.m+s.v+s.c-s.s;
 
+            // Detail List Component
             const DetailList = ({ type }) => {
                 const list = records.filter(r => r.type === type);
                 return (
                     <div className="glass-card p-4 rounded-2xl mt-4 border border-white/10 bg-black/40">
-                         <div className="flex justify-between items-center mb-2"><h3 className="font-bold text-sm uppercase text-slate-300">{type} 詳細列表</h3><button onClick={() => setFilter(null)} className="p-1 rounded-full hover:bg-white/10"><Icon name="X" size={16}/></button></div>
+                         <div className="flex justify-between items-center mb-2">
+                             <h3 className="font-bold text-sm uppercase text-slate-300">{type} 詳細列表</h3>
+                             <button onClick={() => setFilter(null)} className="p-1 rounded-full hover:bg-white/10"><Icon name="X" size={16}/></button>
+                         </div>
                          <div className="space-y-2 max-h-60 overflow-y-auto no-scrollbar">
-                             {list.map(r => (<div key={r.id} className="flex justify-between text-xs p-2 rounded bg-white/5"><span>{r.date} - {r.venue || r.itemName || r.title || '打卡'}</span><span className="font-mono-num text-green-400">${r.amount}</span></div>))}
+                             {list.map(r => (
+                                 <div key={r.id} className="flex justify-between text-xs p-2 rounded bg-white/5">
+                                     <span>{r.date} - {r.venue || r.itemName || r.title || '打卡'}</span>
+                                     <span className="font-mono-num text-green-400">${r.amount}</span>
+                                 </div>
+                             ))}
                          </div>
                     </div>
                 );
@@ -709,8 +644,8 @@
                 <div className="space-y-4 pb-20">
                     <div className="glass-card p-5 rounded-3xl flex items-center gap-4 border border-white/5"><div className="w-12 h-12 rounded-full bg-gradient-to-tr from-blue-600 to-purple-600 flex items-center justify-center font-bold text-xl shadow-lg">{user.displayName[0]}</div><div><div className="font-bold text-lg text-white">{user.displayName}</div><div className="text-[10px] text-slate-400">{user.email}</div></div></div>
                     <div className="glass-card p-5 rounded-3xl space-y-3"><h3 className="font-bold text-slate-300 flex items-center gap-2 text-sm"><Icon name="UserCog" size={16}/> 暱稱</h3><div className="hk-input-group"><input value={settings.nickname} onChange={e=>onUpdate({...settings,nickname:e.target.value})} className="hk-input text-sm"/></div></div>
-                    <div className="glass-card p-5 rounded-3xl space-y-3"><h3 className="font-bold text-slate-300 flex items-center gap-2 text-sm"><Icon name="MapPin" size={16}/> 場地</h3><div className="flex flex-wrap gap-2">{(settings.venues||[]).map(v=><span key={v} className="px-2 py-1 bg-blue-900/30 rounded-lg text-[10px] flex items-center gap-2 border border-blue-500/30 text-blue-200">{v}<button onClick={()=>del('venues',v)}><Icon name="X" size={10}/></button></span>)}</div><div className="flex gap-2"><div className="hk-input-group flex-1"><input value={newVenue} onChange={e=>setNewVenue(e.target.value)} placeholder="新場地" className="hk-input text-sm py-1.5"/></div><button onClick={()=>add('venues',newVenue)} className="px-3 bg-blue-600 rounded-xl"><Icon name="Plus" size={16}/></button></div></div>
-                    <div className="glass-card p-5 rounded-3xl space-y-3"><h3 className="font-bold text-slate-300 flex items-center gap-2 text-sm"><Icon name="Truck" size={16}/> 來源</h3><div className="flex flex-wrap gap-2">{(settings.sources||[]).map(s=><span key={s} className="px-2 py-1 bg-purple-900/30 rounded-lg text-[10px] flex items-center gap-2 border border-purple-500/30 text-purple-200">{s}<button onClick={()=>del('sources',s)}><Icon name="X" size={10}/></button></span>)}</div><div className="flex gap-2"><div className="hk-input-group flex-1"><input value={newSource} onChange={e=>setNewSource(e.target.value)} placeholder="新來源" className="hk-input text-sm py-1.5"/></div><button onClick={()=>add('sources',newSource)} className="px-3 bg-purple-600 rounded-xl"><Icon name="Plus" size={16}/></button></div></div>
+                    <div className="glass-card p-5 rounded-3xl space-y-3"><h3 className="font-bold text-slate-300 flex items-center gap-2 text-sm"><Icon name="MapPin" size={16}/> 場地</h3><div className="flex flex-wrap gap-2">{settings.venues.map(v=><span key={v} className="px-2 py-1 bg-blue-900/30 rounded-lg text-[10px] flex items-center gap-2 border border-blue-500/30 text-blue-200">{v}<button onClick={()=>del('venues',v)}><Icon name="X" size={10}/></button></span>)}</div><div className="flex gap-2"><div className="hk-input-group flex-1"><input value={newVenue} onChange={e=>setNewVenue(e.target.value)} placeholder="新場地" className="hk-input text-sm py-1.5"/></div><button onClick={()=>add('venues',newVenue)} className="px-3 bg-blue-600 rounded-xl"><Icon name="Plus" size={16}/></button></div></div>
+                    <div className="glass-card p-5 rounded-3xl space-y-3"><h3 className="font-bold text-slate-300 flex items-center gap-2 text-sm"><Icon name="Truck" size={16}/> 來源</h3><div className="flex flex-wrap gap-2">{settings.sources.map(s=><span key={s} className="px-2 py-1 bg-purple-900/30 rounded-lg text-[10px] flex items-center gap-2 border border-purple-500/30 text-purple-200">{s}<button onClick={()=>del('sources',s)}><Icon name="X" size={10}/></button></span>)}</div><div className="flex gap-2"><div className="hk-input-group flex-1"><input value={newSource} onChange={e=>setNewSource(e.target.value)} placeholder="新來源" className="hk-input text-sm py-1.5"/></div><button onClick={()=>add('sources',newSource)} className="px-3 bg-purple-600 rounded-xl"><Icon name="Plus" size={16}/></button></div></div>
                     <button onClick={handleSaveAll} className="w-full py-3 rounded-2xl bg-green-500/10 text-green-400 border border-green-500/20 font-bold hover:bg-green-500/20 transition-colors text-sm shadow-[0_0_15px_rgba(34,197,94,0.1)] flex items-center justify-center gap-2"><Icon name="Save" size={16}/> 儲存設定 Save Settings</button>
                     <button onClick={()=>{ setModal({type:'confirm',props:{title:'登出?',message:'確定要登出嗎?',onConfirm:logout}}) }} className="w-full py-3 rounded-2xl bg-red-500/10 text-red-400 border border-red-500/20 font-bold hover:bg-red-500/20 transition-colors text-sm">登出系統</button>
                 </div>
@@ -742,6 +677,7 @@
             const [activePermissions, setActivePermissions] = useState(null);
             const [editingRecord, setEditingRecord] = useState(null);
             const [isOnline, setIsOnline] = useState(navigator.onLine);
+            const [loading, setLoading] = useState(true);
 
             useEffect(() => {
                 const handleStatusChange = () => setIsOnline(navigator.onLine);
@@ -754,15 +690,22 @@
             }, []);
 
             useEffect(() => {
-                auth.onAuthStateChanged(async (u) => {
+                const unsubscribe = auth.onAuthStateChanged(async (u) => {
                     if (u) {
                         setUser({ ...u, isGuest: false, displayName: u.displayName || '未命名' });
-                        loadData(u.uid);
+                        const s = await db.collection('artifacts').doc('recordmachine').collection('users').doc(u.uid).collection('settings').doc('profile').get();
+                        if (s.exists) setSettings(prev => ({...prev, ...s.data()}));
+                        db.collection('artifacts').doc('recordmachine').collection('users').doc(u.uid).collection('records').orderBy('date', 'desc').limit(200)
+                            .onSnapshot(snap => {
+                                setRecords(snap.docs.map(d => ({id: d.id, ...d.data()})));
+                            });
                     } else {
                         const g = localStorage.getItem('guest');
-                        if (g) { setUser(JSON.parse(g)); loadGuestData(); }
+                        if (g) { setUser(JSON.parse(g)); setRecords(JSON.parse(localStorage.getItem('guest_records') || '[]')); setSettings(JSON.parse(localStorage.getItem('guest_settings') || JSON.stringify(settings))); }
                     }
+                    setLoading(false);
                 });
+                return () => unsubscribe();
             }, []);
 
             useEffect(() => {
@@ -772,7 +715,11 @@
                             if(doc.exists) setActivePermissions(doc.data().permissions || {});
                             else { alert("分享已停止"); setViewingUser(null); }
                         });
-                    return () => unsub();
+                    const unsubRecords = db.collection('artifacts').doc('recordmachine').collection('users').doc(viewingUser.ownerUid).collection('records').orderBy('date', 'desc').limit(200)
+                        .onSnapshot(snap => {
+                             setRecords(snap.docs.map(d => ({id: d.id, ...d.data()})));
+                        });
+                    return () => { unsub(); unsubRecords(); };
                 } else {
                     setActivePermissions(null);
                 }
@@ -785,27 +732,20 @@
                 setMonthlyEst(total);
             }, [records]);
 
-            const loadData = async (uid) => {
-                const s = await db.collection('artifacts').doc('recordmachine').collection('users').doc(uid).collection('settings').doc('profile').get();
-                if (s.exists) setSettings(prev => ({...prev, ...s.data()}));
-                const r = await db.collection('artifacts').doc('recordmachine').collection('users').doc(uid).collection('records').orderBy('date', 'desc').limit(200).get();
-                setRecords(r.docs.map(d => ({id: d.id, ...d.data()})));
-            };
-
-            const loadGuestData = () => {
-                setRecords(JSON.parse(localStorage.getItem('guest_records') || '[]'));
-                setSettings(JSON.parse(localStorage.getItem('guest_settings') || JSON.stringify(settings)));
-            };
-
             const switchViewUser = async (shareObj) => {
                 if (!shareObj) {
                     setViewingUser(null);
-                    loadData(user.uid);
+                    if(user && !user.isGuest) {
+                         const s = await db.collection('artifacts').doc('recordmachine').collection('users').doc(user.uid).collection('settings').doc('profile').get();
+                         if(s.exists) setSettings(prev => ({...prev, ...s.data()}));
+                         db.collection('artifacts').doc('recordmachine').collection('users').doc(user.uid).collection('records').orderBy('date', 'desc').limit(200)
+                            .onSnapshot(snap => {
+                                setRecords(snap.docs.map(d => ({id: d.id, ...d.data()})));
+                            });
+                    }
                 } else {
                     setViewingUser(shareObj);
                     setActivePermissions(shareObj.permissions || {});
-                    const r = await db.collection('artifacts').doc('recordmachine').collection('users').doc(shareObj.ownerUid).collection('records').orderBy('date', 'desc').limit(200).get();
-                    setRecords(r.docs.map(d => ({id: d.id, ...d.data()})));
                     const s = await db.collection('artifacts').doc('recordmachine').collection('users').doc(shareObj.ownerUid).collection('settings').doc('profile').get();
                     if(s.exists) setSettings(prev => ({...prev, ...s.data()}));
                 }
@@ -813,34 +753,28 @@
 
             const handleAdd = async (d) => { 
                 const nr={...d,id:Math.random().toString(36).slice(2),createdAt:new Date().toISOString()}; 
-                const ns=[nr,...records]; 
-                setRecords(ns); 
                 if(!user.isGuest) {
                     await db.collection('artifacts').doc('recordmachine').collection('users').doc(user.uid).collection('records').doc(nr.id).set(nr); 
                 } else {
-                    localStorage.setItem('guest_records',JSON.stringify(ns)); 
+                    const ns=[nr,...records]; setRecords(ns); localStorage.setItem('guest_records',JSON.stringify(ns)); 
                 }
             };
 
             const handleUpdate = async (d) => { 
-                const ns=records.map(r=>r.id===d.id?d:r); 
-                setRecords(ns); 
                 if(!user.isGuest) {
                     await db.collection('artifacts').doc('recordmachine').collection('users').doc(user.uid).collection('records').doc(d.id).set(d,{merge:true}); 
                 } else {
-                    localStorage.setItem('guest_records',JSON.stringify(ns)); 
+                    const ns=records.map(r=>r.id===d.id?d:r); setRecords(ns); localStorage.setItem('guest_records',JSON.stringify(ns)); 
                 }
                 setEditingRecord(null); 
             };
 
             const handleDelete = async (id) => { 
                 if(!confirm("刪除?")) return; 
-                const ns=records.filter(r=>r.id!==id); 
-                setRecords(ns); 
                 if(!user.isGuest) {
                     await db.collection('artifacts').doc('recordmachine').collection('users').doc(user.uid).collection('records').doc(id).delete(); 
                 } else {
-                    localStorage.setItem('guest_records',JSON.stringify(ns)); 
+                    const ns=records.filter(r=>r.id!==id); setRecords(ns); localStorage.setItem('guest_records',JSON.stringify(ns)); 
                 }
                 setEditingRecord(null); 
             };
@@ -853,11 +787,12 @@
                     try {
                         await db.collection('artifacts').doc('recordmachine').collection('users').doc(user.uid).collection('settings').doc('profile').set(newSettings, {merge:true});
                     } catch (e) {
-                        alert("設定儲存失敗 (權限錯誤或網路問題)");
+                        alert("設定儲存失敗: " + e.message);
                     }
                 }
             };
 
+            if (loading) return <div className="min-h-screen flex items-center justify-center text-blue-500 font-bold">LOADING...</div>;
             if (!user) return <Login onLogin={(u) => { setUser(u); if(u.isGuest) loadGuestData(); }} />;
 
             const isBlocked = viewingUser && activePermissions && activePermissions[view] === false;
@@ -888,8 +823,6 @@
                         </AnimatePresence>
                     </main>
 
-                    <FloatingDock current={view} setView={setView} />
-                    
                     <AnimatePresence>
                         {editingRecord && !viewingUser && <EditModal record={editingRecord} onClose={()=>setEditingRecord(null)} onUpdate={handleUpdate} onDelete={handleDelete} settings={settings} />}
                         {showShareModal && <ShareCenter user={user} onClose={()=>setShowShareModal(false)} onSwitchUser={switchViewUser} />}
