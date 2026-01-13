@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>機台收支管理系統 Pro V10.4</title>
+    <title>機台收支管理系統 Pro V10.5</title>
     
     <!-- React & Libraries -->
     <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
@@ -32,6 +32,7 @@
             overscroll-behavior-y: none;
         }
 
+        /* --- 經典動態背景 --- */
         .cyber-bg {
             position: fixed;
             top: 0; left: 0; width: 100vw; height: 100vh;
@@ -49,6 +50,7 @@
             opacity: 0.4;
         }
 
+        /* --- 經典玻璃擬態 --- */
         .glass-nav {
             background: rgba(30, 30, 35, 0.8);
             border: 1px solid rgba(255, 255, 255, 0.1);
@@ -72,7 +74,7 @@
         .glass-card:active { transform: scale(0.98); background: rgba(255, 255, 255, 0.08); }
 
         .glass-modal {
-            background: rgba(15, 15, 18, 0.98);
+            background: rgba(15, 15, 18, 0.95);
             backdrop-filter: blur(40px);
             border: 1px solid rgba(255, 255, 255, 0.1);
             box-shadow: 0 -20px 60px rgba(0,0,0,0.8);
@@ -85,6 +87,7 @@
             box-shadow: 0 10px 30px rgba(0,0,0,0.5);
         }
 
+        /* --- 經典輸入框 --- */
         .hk-input-group {
             position: relative;
             background: rgba(0,0,0,0.4);
@@ -172,7 +175,7 @@
             const addToast = (msg, type = 'success') => {
                 const id = Date.now();
                 setToasts(prev => [...prev, { id, msg, type }]);
-                setTimeout(() => setToasts(prev => prev.filter(t => t.id !== id)), 4000);
+                setTimeout(() => setToasts(prev => prev.filter(t => t.id !== id)), 3000);
             };
 
             return (
@@ -257,7 +260,7 @@
                             </div>
                         </div>
                         <h1 className="text-base font-black tracking-wide text-white leading-tight mt-1">機台收支</h1>
-                        <p className="text-[8px] text-blue-500 font-bold tracking-widest leading-none">(V10.4)</p>
+                        <p className="text-[8px] text-blue-500 font-bold tracking-widest leading-none">(V10.5)</p>
                     </div>
                     
                     {/* 中間卡片 */}
@@ -428,7 +431,7 @@
                             {record.type === 'machine' && (
                                 <>
                                     <div className="hk-input-group border-green-500/30"><input type="number" value={form.amount} onChange={e=>setForm({...form, amount:Number(e.target.value)})} className="hk-input text-green-400 font-bold" /></div>
-                                    <div className="hk-input-group"><select value={form.venue} onChange={e=>setForm({...form, venue:e.target.value})} className="hk-input bg-transparent text-white">{settings.venues?.map(v=><option key={v} value={v} className="bg-slate-900">{v}</option>)}</select></div>
+                                    <div className="hk-input-group"><select value={form.venue} onChange={e=>setForm({...form, venue:e.target.value})} className="hk-input bg-transparent text-white">{settings.venues.map(v=><option key={v} value={v} className="bg-slate-900">{v}</option>)}</select></div>
                                     <div className="hk-input-group"><input value={form.notes} onChange={e=>setForm({...form, notes:e.target.value})} className="hk-input" placeholder="備註" /></div>
                                 </>
                             )}
@@ -452,13 +455,17 @@
 
         const Accounting = ({ records, onAdd, onEdit, settings, readOnly, nav }) => {
             const [mode, setMode] = useState('machine');
-            const [form, setForm] = useState({date: new Date().toISOString().split('T')[0], venue: settings.venues?.[0] || '', mType: 'std', amt: '', top: '', bot: '', note: '', source: settings.sources?.[0] || '', item: '', qty: '', cost: ''});
+            const [form, setForm] = useState({date: new Date().toISOString().split('T')[0], venue: settings.venues[0], mType: 'std', amt: '', top: '', bot: '', note: '', source: settings.sources[0], item: '', qty: '', cost: ''});
             const toast = useContext(ToastContext);
             
-            // Effect to set default values if settings change
+            // Sync default values when settings load
             useEffect(() => {
-                if(settings.venues?.length && !form.venue) setForm(f => ({...f, venue: settings.venues[0]}));
-                if(settings.sources?.length && !form.source) setForm(f => ({...f, source: settings.sources[0]}));
+                if (settings.venues && settings.venues.length > 0 && !form.venue) {
+                    setForm(prev => ({...prev, venue: settings.venues[0]}));
+                }
+                if (settings.sources && settings.sources.length > 0 && !form.source) {
+                    setForm(prev => ({...prev, source: settings.sources[0]}));
+                }
             }, [settings]);
 
             const submit = () => {
@@ -584,6 +591,7 @@
             const [newSource, setNewSource] = useState('');
             const toast = useContext(ToastContext);
             const setModal = useContext(ModalContext);
+            const [isSaving, setIsSaving] = useState(false);
 
             // Sync with parent when settings change (e.g. initial load)
             useEffect(() => {
@@ -604,21 +612,13 @@
             };
 
             const delLocal = (key, val) => { 
-                setModal({
-                    type: 'confirm',
-                    props: { 
-                        title: '刪除選項?', 
-                        message: `確定刪除 "${val}" 嗎? (需按儲存生效)`, 
-                        onConfirm: () => { 
-                            const listKey = key === 'venue' ? 'venues' : 'sources';
-                            const currentList = localSettings[listKey] || [];
-                            updateLocal(listKey, currentList.filter(x => x !== val));
-                        } 
-                    }
-                });
+                const listKey = key === 'venue' ? 'venues' : 'sources';
+                const currentList = localSettings[listKey] || [];
+                updateLocal(listKey, currentList.filter(x => x !== val));
             };
             
-            const handleSaveAll = () => { 
+            const handleSaveAll = async () => { 
+                setIsSaving(true);
                 // Auto-commit pending inputs
                 let finalSettings = { ...localSettings };
                 if (newVenue) {
@@ -630,7 +630,8 @@
                     setNewSource('');
                 }
                 
-                onUpdate(finalSettings); 
+                await onUpdate(finalSettings);
+                setIsSaving(false);
                 toast('設定已儲存', 'success'); 
             };
 
@@ -658,7 +659,9 @@
                         <div className="flex gap-2"><div className="hk-input-group flex-1"><input value={newSource} onChange={e=>setNewSource(e.target.value)} placeholder="新來源" className="hk-input text-sm py-1.5"/></div><button onClick={()=>addLocal('source',newSource)} className="px-3 bg-purple-600 rounded-xl"><Icon name="Plus" size={16}/></button></div>
                     </div>
                     
-                    <button onClick={handleSaveAll} className="w-full py-3 rounded-2xl bg-green-500/10 text-green-400 border border-green-500/20 font-bold hover:bg-green-500/20 transition-colors text-sm shadow-[0_0_15px_rgba(34,197,94,0.1)] flex items-center justify-center gap-2"><Icon name="Save" size={16}/> 儲存設定 Save Settings</button>
+                    <button onClick={handleSaveAll} disabled={isSaving} className={`w-full py-3 rounded-2xl border font-bold transition-colors text-sm shadow-[0_0_15px_rgba(34,197,94,0.1)] flex items-center justify-center gap-2 ${isSaving ? 'bg-gray-600 border-gray-600 text-gray-300' : 'bg-green-500/10 text-green-400 border-green-500/20 hover:bg-green-500/20'}`}>
+                        {isSaving ? '儲存中...' : <><Icon name="Save" size={16}/> 儲存設定 Save Settings</>}
+                    </button>
                     <button onClick={()=>{ setModal({type:'confirm',props:{title:'登出?',message:'確定要登出嗎?',onConfirm:logout}}) }} className="w-full py-3 rounded-2xl bg-red-500/10 text-red-400 border border-red-500/20 font-bold hover:bg-red-500/20 transition-colors text-sm">登出系統</button>
                 </div>
             );
@@ -718,14 +721,13 @@
                 const unsubscribe = auth.onAuthStateChanged(async (u) => {
                     if (u) {
                         setUser({ ...u, isGuest: false, displayName: u.displayName || '未命名' });
-                        
-                        // 統一監聽邏輯：設定檔
+                        // Listen to Settings
                         db.collection('artifacts').doc('recordmachine').collection('users').doc(u.uid).collection('settings').doc('profile')
                             .onSnapshot(doc => {
                                 if (doc.exists) setSettings(doc.data());
                             }, err => console.error("Settings sync error:", err));
                         
-                        // 統一監聽邏輯：記錄
+                        // Listen to Records
                         db.collection('artifacts').doc('recordmachine').collection('users').doc(u.uid).collection('records').orderBy('date', 'desc').limit(200)
                             .onSnapshot(snap => {
                                 setRecords(snap.docs.map(d => ({id: d.id, ...d.data()})));
@@ -739,7 +741,6 @@
                 return () => unsubscribe();
             }, []);
 
-            // 處理查看他人模式的監聽切換
             useEffect(() => {
                 if (viewingUser) {
                     const unsub = db.collection('artifacts').doc('recordmachine').collection('public').doc('data').collection('shares').doc(viewingUser.id)
@@ -763,12 +764,11 @@
 
                     return () => { unsub(); unsubRecords(); unsubSettings(); };
                 } else if (user && !user.isGuest) {
-                    // 切換回自己時，雖然 auth listener 會保持，但為了確保數據一致性，可以在這裡不做額外操作，依賴最上層的 auth listener
-                    // 為了 UX 順暢，如果剛從 view 模式回來，可能需要重新觸發一次讀取（雖非必須但保險）
+                    // Do nothing, auth listener handles it
                 } else {
                     setActivePermissions(null);
                 }
-            }, [viewingUser, user]); // Dependency updated
+            }, [viewingUser, user]);
 
             useEffect(() => {
                 if (!records.length) { setMonthlyEst(0); return; }
@@ -780,7 +780,6 @@
             const switchViewUser = async (shareObj) => {
                 if (!shareObj) {
                     setViewingUser(null);
-                    // Force reload is a safe way to reset all listeners to "My Data" state without complex logic
                     window.location.reload();
                 } else {
                     setViewingUser(shareObj);
@@ -816,8 +815,9 @@
             };
             
             const handleSettingsUpdate = async (newSettings) => {
-                setSettings(newSettings);
+                // Now called only when "Save" is clicked
                 if (user.isGuest) {
+                    setSettings(newSettings);
                     localStorage.setItem('guest_settings', JSON.stringify(newSettings));
                 } else {
                     try {
@@ -846,7 +846,6 @@
                                 </motion.div>
                             ) : (
                                 <motion.div key={view} initial={{opacity:0, y:10}} animate={{opacity:1, y:0}} exit={{opacity:0, y:-10}} transition={{duration:0.25}}>
-                                    {/* 導航欄邏輯: 記數頁面放在中間，其他頁面放在頂部 */}
                                     {view !== 'accounting' && <NavBar current={view} setView={setView} />}
                                     
                                     {view === 'accounting' && <Accounting records={records} onAdd={handleAdd} onEdit={setEditingRecord} settings={settings} readOnly={!!viewingUser} nav={<NavBar current={view} setView={setView} />} />}
