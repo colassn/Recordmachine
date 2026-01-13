@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>機台收支管理系統 V10.3</title>
+    <title>機台收支管理系統 Pro V10.4</title>
     
     <!-- React & Libraries -->
     <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
@@ -72,7 +72,7 @@
         .glass-card:active { transform: scale(0.98); background: rgba(255, 255, 255, 0.08); }
 
         .glass-modal {
-            background: rgba(20, 20, 25, 0.98);
+            background: rgba(15, 15, 18, 0.98);
             backdrop-filter: blur(40px);
             border: 1px solid rgba(255, 255, 255, 0.1);
             box-shadow: 0 -20px 60px rgba(0,0,0,0.8);
@@ -136,8 +136,8 @@
         if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
         const auth = firebase.auth();
         const db = firebase.firestore();
-
-        // 離線持久化 (Best Effort)
+        
+        // 嘗試啟用離線支援 (Best Effort)
         try {
             db.enablePersistence({ synchronizeTabs: true }).catch(err => {
                 console.log('Persistence disabled:', err.code);
@@ -172,7 +172,7 @@
             const addToast = (msg, type = 'success') => {
                 const id = Date.now();
                 setToasts(prev => [...prev, { id, msg, type }]);
-                setTimeout(() => setToasts(prev => prev.filter(t => t.id !== id)), 3000);
+                setTimeout(() => setToasts(prev => prev.filter(t => t.id !== id)), 4000);
             };
 
             return (
@@ -257,7 +257,7 @@
                             </div>
                         </div>
                         <h1 className="text-base font-black tracking-wide text-white leading-tight mt-1">機台收支</h1>
-                        <p className="text-[8px] text-blue-500 font-bold tracking-widest leading-none">(V10.3)</p>
+                        <p className="text-[8px] text-blue-500 font-bold tracking-widest leading-none">(V10.4)</p>
                     </div>
                     
                     {/* 中間卡片 */}
@@ -314,11 +314,15 @@
 
             const sendInvite = async () => {
                 if(!inviteEmail) return;
-                await db.collection('artifacts').doc('recordmachine').collection('public').doc('data').collection('shares').add({
-                    ownerUid: user.uid, ownerEmail: user.email, allowedEmail: inviteEmail, createdAt: new Date().toISOString(), 
-                    permissions: { accounting:true, data:true, video:true, clock:true, summary:true }
-                });
-                setInviteEmail(''); toast('邀請已發送');
+                try {
+                    await db.collection('artifacts').doc('recordmachine').collection('public').doc('data').collection('shares').add({
+                        ownerUid: user.uid, ownerEmail: user.email, allowedEmail: inviteEmail, createdAt: new Date().toISOString(), 
+                        permissions: { accounting:true, data:true, video:true, clock:true, summary:true }
+                    });
+                    setInviteEmail(''); toast('邀請已發送');
+                } catch (error) {
+                    toast('邀請失敗: ' + error.message, 'error');
+                }
             };
 
             const togglePerm = async (id, k, v) => {
@@ -424,7 +428,7 @@
                             {record.type === 'machine' && (
                                 <>
                                     <div className="hk-input-group border-green-500/30"><input type="number" value={form.amount} onChange={e=>setForm({...form, amount:Number(e.target.value)})} className="hk-input text-green-400 font-bold" /></div>
-                                    <div className="hk-input-group"><select value={form.venue} onChange={e=>setForm({...form, venue:e.target.value})} className="hk-input bg-transparent text-white">{(settings.venues || []).map(v=><option key={v} value={v} className="bg-slate-900">{v}</option>)}</select></div>
+                                    <div className="hk-input-group"><select value={form.venue} onChange={e=>setForm({...form, venue:e.target.value})} className="hk-input bg-transparent text-white">{settings.venues?.map(v=><option key={v} value={v} className="bg-slate-900">{v}</option>)}</select></div>
                                     <div className="hk-input-group"><input value={form.notes} onChange={e=>setForm({...form, notes:e.target.value})} className="hk-input" placeholder="備註" /></div>
                                 </>
                             )}
@@ -714,17 +718,18 @@
                 const unsubscribe = auth.onAuthStateChanged(async (u) => {
                     if (u) {
                         setUser({ ...u, isGuest: false, displayName: u.displayName || '未命名' });
-                        // Listen to Settings
+                        
+                        // 統一監聽邏輯：設定檔
                         db.collection('artifacts').doc('recordmachine').collection('users').doc(u.uid).collection('settings').doc('profile')
                             .onSnapshot(doc => {
                                 if (doc.exists) setSettings(doc.data());
-                            });
+                            }, err => console.error("Settings sync error:", err));
                         
-                        // Listen to Records
+                        // 統一監聽邏輯：記錄
                         db.collection('artifacts').doc('recordmachine').collection('users').doc(u.uid).collection('records').orderBy('date', 'desc').limit(200)
                             .onSnapshot(snap => {
                                 setRecords(snap.docs.map(d => ({id: d.id, ...d.data()})));
-                            });
+                            }, err => console.error("Records sync error:", err));
                     } else {
                         const g = localStorage.getItem('guest');
                         if (g) { setUser(JSON.parse(g)); setRecords(JSON.parse(localStorage.getItem('guest_records') || '[]')); setSettings(JSON.parse(localStorage.getItem('guest_settings') || JSON.stringify(settings))); }
@@ -734,6 +739,7 @@
                 return () => unsubscribe();
             }, []);
 
+            // 處理查看他人模式的監聽切換
             useEffect(() => {
                 if (viewingUser) {
                     const unsub = db.collection('artifacts').doc('recordmachine').collection('public').doc('data').collection('shares').doc(viewingUser.id)
@@ -741,21 +747,28 @@
                             if(doc.exists) setActivePermissions(doc.data().permissions || {});
                             else { alert("分享已停止"); setViewingUser(null); }
                         });
+                    
                     const unsubRecords = db.collection('artifacts').doc('recordmachine').collection('users').doc(viewingUser.ownerUid).collection('records').orderBy('date', 'desc').limit(200)
                         .onSnapshot(snap => {
                              setRecords(snap.docs.map(d => ({id: d.id, ...d.data()})));
+                        }, error => {
+                             console.error("View records error:", error);
+                             alert("讀取分享資料失敗 (可能是權限問題)");
                         });
-                    // Also listen to their settings to get venues list etc
+                        
                     const unsubSettings = db.collection('artifacts').doc('recordmachine').collection('users').doc(viewingUser.ownerUid).collection('settings').doc('profile')
                         .onSnapshot(doc => {
                             if(doc.exists) setSettings(doc.data());
                         });
 
                     return () => { unsub(); unsubRecords(); unsubSettings(); };
+                } else if (user && !user.isGuest) {
+                    // 切換回自己時，雖然 auth listener 會保持，但為了確保數據一致性，可以在這裡不做額外操作，依賴最上層的 auth listener
+                    // 為了 UX 順暢，如果剛從 view 模式回來，可能需要重新觸發一次讀取（雖非必須但保險）
                 } else {
                     setActivePermissions(null);
                 }
-            }, [viewingUser]);
+            }, [viewingUser, user]); // Dependency updated
 
             useEffect(() => {
                 if (!records.length) { setMonthlyEst(0); return; }
@@ -767,16 +780,10 @@
             const switchViewUser = async (shareObj) => {
                 if (!shareObj) {
                     setViewingUser(null);
-                    if(user && !user.isGuest) {
-                         // Reset listener back to own data is handled by auth effect, but we might need to trigger re-fetch for cleaner UX or just rely on existing listeners if they persist. 
-                         // Simplest: Force reload page or re-init listeners. 
-                         // Actually, our auth listener only runs once. We need to manually re-subscribe to own data.
-                         // For simplicity in this version, we reload page to reset state safely.
-                         window.location.reload();
-                    }
+                    // Force reload is a safe way to reset all listeners to "My Data" state without complex logic
+                    window.location.reload();
                 } else {
                     setViewingUser(shareObj);
-                    // The useEffect [viewingUser] will handle the data fetching
                 }
             };
 
@@ -809,9 +816,8 @@
             };
             
             const handleSettingsUpdate = async (newSettings) => {
-                // Optimistic UI update not needed as we have real-time listener
+                setSettings(newSettings);
                 if (user.isGuest) {
-                    setSettings(newSettings);
                     localStorage.setItem('guest_settings', JSON.stringify(newSettings));
                 } else {
                     try {
@@ -840,6 +846,7 @@
                                 </motion.div>
                             ) : (
                                 <motion.div key={view} initial={{opacity:0, y:10}} animate={{opacity:1, y:0}} exit={{opacity:0, y:-10}} transition={{duration:0.25}}>
+                                    {/* 導航欄邏輯: 記數頁面放在中間，其他頁面放在頂部 */}
                                     {view !== 'accounting' && <NavBar current={view} setView={setView} />}
                                     
                                     {view === 'accounting' && <Accounting records={records} onAdd={handleAdd} onEdit={setEditingRecord} settings={settings} readOnly={!!viewingUser} nav={<NavBar current={view} setView={setView} />} />}
