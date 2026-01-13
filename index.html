@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>機台收支管理系統 V10.0</title>
+    <title>機台收支管理系統 V10.1</title>
     
     <!-- React & Libraries -->
     <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
@@ -140,8 +140,10 @@
         const auth = firebase.auth();
         const db = firebase.firestore();
         
-        // 離線支援
-        db.enablePersistence({ synchronizeTabs: true }).catch(err => console.log("Persistence:", err.code));
+        // 離線支援 (嘗試啟用)
+        try {
+            db.enablePersistence({ synchronizeTabs: true }).catch(err => console.log("Persistence error:", err.code));
+        } catch(e) { console.log("Persistence check skipped"); }
 
         // --- Icon ---
         const Icon = ({ name, size=20, className="", ...props }) => {
@@ -227,33 +229,22 @@
 
         // --- Shared Components ---
         const NavBar = ({ current, setView }) => {
-            const tabs = [
-                { id: 'accounting', label: '記數', icon: 'Calculator' }, 
-                { id: 'data', label: '資料', icon: 'FolderOpen' }, 
-                { id: 'video', label: '影片', icon: 'Film' }, 
-                { id: 'clock', label: '打卡', icon: 'Timer' }, 
-                { id: 'summary', label: '結算', icon: 'PieChart' }
-            ];
-            
+            const tabs = [{ id: 'accounting', label: '記數', icon: 'Calculator' }, { id: 'data', label: '資料', icon: 'FolderOpen' }, { id: 'video', label: '影片', icon: 'Film' }, { id: 'clock', label: '打卡', icon: 'Timer' }, { id: 'summary', label: '結算', icon: 'PieChart' }];
             return (
-                <div className="glass-nav overflow-x-auto no-scrollbar">
-                    {tabs.map((tab) => {
-                        const isActive = current === tab.id;
-                        return (
-                            <button key={tab.id} onClick={() => setView(tab.id)} className={`relative flex flex-col items-center justify-center min-w-[64px] py-2 rounded-xl transition-all duration-300 ${isActive ? 'bg-blue-600/20 text-blue-400' : 'text-slate-500 hover:text-slate-300'}`}>
-                                <Icon name={tab.icon} size={20} />
-                                <span className="text-[10px] font-bold mt-1">{tab.label}</span>
-                                {isActive && <motion.div layoutId="nav-underline" className="absolute bottom-1 w-1 h-1 bg-blue-500 rounded-full" />}
-                            </button>
-                        );
-                    })}
+                <div className="glass-nav mb-4 overflow-x-auto no-scrollbar">
+                    {tabs.map((tab) => (
+                        <button key={tab.id} onClick={() => setView(tab.id)} className={`relative flex flex-col items-center justify-center min-w-[60px] py-2 rounded-xl transition-all duration-300 ${current === tab.id ? 'bg-blue-600/20 text-blue-400' : 'text-slate-500 hover:text-slate-300'}`}>
+                            <Icon name={tab.icon} size={18} /><span className="text-[10px] font-bold mt-1">{tab.label}</span>
+                            {current === tab.id && <motion.div layoutId="nav-underline" className="absolute bottom-0 w-3 h-0.5 bg-blue-500 rounded-full" />}
+                        </button>
+                    ))}
                 </div>
             );
         };
 
         const TopBar = ({ user, viewingUser, monthlyEst, isOnline, switchViewUser, setShowShareModal, setView }) => {
             return (
-                <div className="fixed top-0 inset-x-0 z-40 bg-black/80 backdrop-blur-md border-b border-white/10 px-4 pt-safe-top pb-3 flex justify-between items-center h-auto min-h-[90px]">
+                <div className="fixed top-0 inset-x-0 z-40 bg-black/60 backdrop-blur-md border-b border-white/10 px-4 pt-safe-top pb-3 flex justify-between items-center h-auto min-h-[90px]">
                     <div className="flex flex-col w-1/3">
                         <div className="flex items-center gap-1.5 mb-0.5">
                             <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-blue-600 to-purple-600 flex items-center justify-center font-bold text-xs shadow-lg">
@@ -263,11 +254,11 @@
                                 <span className="text-xs font-bold text-white leading-tight truncate">
                                     {viewingUser ? viewingUser.ownerEmail : user?.displayName}
                                 </span>
-                                <span className="text-[9px] text-slate-400 truncate">{user?.email}</span>
+                                <span className="text-[8px] text-slate-400 truncate">{user?.email}</span>
                             </div>
                         </div>
                         <h1 className="text-base font-black tracking-wide text-white leading-tight mt-1">機台收支</h1>
-                        <p className="text-[8px] text-blue-500 font-bold tracking-widest leading-none">(V10.0)</p>
+                        <p className="text-[8px] text-blue-500 font-bold tracking-widest leading-none">(V10.1)</p>
                     </div>
                     
                     {/* 中間卡片 */}
@@ -289,15 +280,15 @@
 
                     <div className="flex items-center justify-end gap-2 w-1/3">
                         {viewingUser ? (
-                            <button onClick={()=>switchViewUser(null)} className="p-2.5 rounded-xl bg-red-500/20 text-red-400 border border-red-500/30 hover:bg-red-500/30">
+                            <button onClick={()=>switchViewUser(null)} className="p-2 rounded-xl bg-red-500/20 text-red-400 border border-red-500/30 hover:bg-red-500/30">
                                 <Icon name="LogOut" size={18}/>
                             </button>
                         ) : (
                             <>
-                                <button onClick={()=>setView('settings')} className="p-2.5 rounded-xl bg-slate-800 text-slate-300 border border-slate-700 hover:bg-slate-700">
+                                <button onClick={()=>setView('settings')} className="p-2 rounded-xl bg-slate-800 text-slate-300 border border-slate-700 hover:bg-slate-700">
                                     <Icon name="Settings" size={18}/>
                                 </button>
-                                <button onClick={()=>setShowShareModal(true)} className="p-2.5 rounded-xl bg-blue-600 text-white shadow-lg hover:bg-blue-500">
+                                <button onClick={()=>setShowShareModal(true)} className="p-2 rounded-xl bg-blue-600 text-white shadow-lg hover:bg-blue-500">
                                     <Icon name="Share2" size={18}/>
                                 </button>
                             </>
@@ -357,15 +348,15 @@
                             <button onClick={onClose}><Icon name="X" size={20}/></button>
                         </div>
                         <div className="flex p-1 bg-slate-900/50 rounded-xl mb-4 border border-white/5">
-                            <button onClick={()=>setActiveTab('mine')} className={`flex-1 py-2 rounded-lg text-xs font-bold ${activeTab==='mine'?'bg-blue-600 text-white shadow-lg':'text-slate-400'}`}>我的分享</button>
-                            <button onClick={()=>setActiveTab('others')} className={`flex-1 py-2 rounded-lg text-xs font-bold ${activeTab==='others'?'bg-purple-600 text-white shadow-lg':'text-slate-400'}`}>接收的分享</button>
+                            <button onClick={()=>setActiveTab('mine')} className={`flex-1 py-1.5 rounded-lg text-xs font-bold ${activeTab==='mine'?'bg-blue-600 text-white shadow-lg':'text-slate-400'}`}>我的分享</button>
+                            <button onClick={()=>setActiveTab('others')} className={`flex-1 py-1.5 rounded-lg text-xs font-bold ${activeTab==='others'?'bg-purple-600 text-white shadow-lg':'text-slate-400'}`}>接收的分享</button>
                         </div>
                         <div className="flex-1 overflow-y-auto no-scrollbar space-y-3">
                             {activeTab === 'mine' ? (
                                 <>
                                     <div className="hk-input-group flex items-center pr-2 mb-3">
                                         <input value={inviteEmail} onChange={e=>setInviteEmail(e.target.value)} placeholder="對方 Email" className="hk-input text-sm"/>
-                                        <button onClick={sendInvite} className="bg-blue-600 px-3 py-1.5 rounded-lg font-bold text-xs whitespace-nowrap">邀請</button>
+                                        <button onClick={sendInvite} className="bg-blue-600 px-3 py-1.5 rounded-lg font-bold text-xs">邀請</button>
                                     </div>
                                     <div className="space-y-3">
                                         {myShares.map(s => (
@@ -379,8 +370,8 @@
                                                         const a=s.permissions?.[k]!==false; 
                                                         const icons = {accounting:'Calculator',data:'Folder',video:'Film',clock:'Timer',summary:'PieChart'}; 
                                                         return (
-                                                            <button key={k} onClick={()=>togglePerm(s.id,k,a)} className={`h-8 rounded flex items-center justify-center transition-colors ${a?'bg-green-500/20 text-green-400 border border-green-500/30':'bg-red-500/10 text-slate-600 border border-transparent'}`}>
-                                                                <Icon name={icons[k]} size={14}/>
+                                                            <button key={k} onClick={()=>togglePerm(s.id,k,a)} className={`h-7 rounded flex items-center justify-center ${a?'bg-green-500/20 text-green-400':'bg-red-500/10 text-slate-600'}`}>
+                                                                <Icon name={icons[k]} size={12}/>
                                                             </button>
                                                         )
                                                     })}
@@ -434,7 +425,7 @@
                             {record.type === 'machine' && (
                                 <>
                                     <div className="hk-input-group border-green-500/30"><input type="number" value={form.amount} onChange={e=>setForm({...form, amount:Number(e.target.value)})} className="hk-input text-green-400 font-bold" /></div>
-                                    <div className="hk-input-group"><select value={form.venue} onChange={e=>setForm({...form, venue:e.target.value})} className="hk-input bg-transparent text-white">{settings.venues?.map(v=><option key={v} value={v} className="bg-slate-900">{v}</option>)}</select></div>
+                                    <div className="hk-input-group"><select value={form.venue} onChange={e=>setForm({...form, venue:e.target.value})} className="hk-input bg-transparent text-white">{settings.venues.map(v=><option key={v} value={v} className="bg-slate-900">{v}</option>)}</select></div>
                                     <div className="hk-input-group"><input value={form.notes} onChange={e=>setForm({...form, notes:e.target.value})} className="hk-input" placeholder="備註" /></div>
                                 </>
                             )}
@@ -477,28 +468,28 @@
             return (
                 <div className="space-y-4">
                     <div className="flex gap-3 p-1 bg-slate-900/50 rounded-2xl border border-white/5">
-                        {['machine','stock'].map(m=><button key={m} onClick={()=>setMode(m)} className={`flex-1 py-3 rounded-xl font-bold flex items-center justify-center gap-2 transition-all text-sm ${mode===m?'bg-blue-600 shadow-lg text-white':'text-slate-500'}`}><Icon name={m==='machine'?'Gamepad2':'Package'} size={20}/>{m==='machine'?'機台收入':'網上入貨'}</button>)}
+                        {['machine','stock'].map(m=><button key={m} onClick={()=>setMode(m)} className={`flex-1 py-2 rounded-xl font-bold flex items-center justify-center gap-2 transition-all text-sm ${mode===m?'bg-blue-600 shadow-lg text-white':'text-slate-500'}`}><Icon name={m==='machine'?'Gamepad2':'Package'} size={20}/>{m==='machine'?'機台收入':'網上入貨'}</button>)}
                     </div>
                     {nav}
                     {!readOnly && (
                         <div className="glass-card p-5 rounded-3xl space-y-3 border-t-2 border-t-blue-500/30">
                             <div className="hk-input-group"><input type="date" value={form.date} onChange={e=>setForm({...form,date:e.target.value})} className="hk-input"/></div>
                             {mode==='machine'?(<>
-                                <div className="flex gap-2 overflow-x-auto no-scrollbar pb-1">{(settings.venues || []).map(v=><button key={v} onClick={()=>setForm({...form,venue:v})} className={`px-3 py-2 rounded-xl text-xs font-bold border ${form.venue===v?'bg-blue-600 border-blue-500 text-white shadow-md':'border-slate-700 text-slate-400'}`}>{v}</button>)}</div>
-                                <div className="grid grid-cols-2 gap-3"><button onClick={()=>setForm({...form,mType:'std'})} className={`py-3 rounded-xl text-xs font-bold border ${form.mType==='std'?'bg-blue-500/20 border-blue-500 text-blue-400':'border-slate-700 text-slate-500'}`}>標準機</button><button onClick={()=>setForm({...form,mType:'mini'})} className={`py-3 rounded-xl text-xs font-bold border ${form.mType==='mini'?'bg-pink-500/20 border-pink-500 text-pink-400':'border-slate-700 text-slate-500'}`}>迷你機</button></div>
-                                {form.mType==='std'?<div className="hk-input-group border-green-500/30"><input type="number" placeholder="金額 $" value={form.amt} onChange={e=>setForm({...form,amt:e.target.value})} className="hk-input text-xl font-mono-num font-bold text-green-400"/></div>:<div className="flex gap-3"><div className="hk-input-group"><input type="number" placeholder="上層" value={form.top} onChange={e=>setForm({...form,top:e.target.value})} className="hk-input font-mono-num"/></div><div className="hk-input-group"><input type="number" placeholder="下層" value={form.bot} onChange={e=>setForm({...form,bot:e.target.value})} className="hk-input font-mono-num"/></div></div>}
+                                <div className="flex gap-2 overflow-x-auto no-scrollbar pb-1">{(settings.venues || []).map(v=><button key={v} onClick={()=>setForm({...form,venue:v})} className={`px-3 py-1.5 rounded-lg text-xs font-bold border ${form.venue===v?'bg-blue-600 border-blue-500 text-white shadow-md':'border-slate-700 text-slate-400'}`}>{v}</button>)}</div>
+                                <div className="grid grid-cols-2 gap-3"><button onClick={()=>setForm({...form,mType:'std'})} className={`py-2 rounded-xl text-xs font-bold border ${form.mType==='std'?'bg-blue-500/20 border-blue-500 text-blue-400':'border-slate-700 text-slate-500'}`}>標準機</button><button onClick={()=>setForm({...form,mType:'mini'})} className={`py-2 rounded-xl text-xs font-bold border ${form.mType==='mini'?'bg-pink-500/20 border-pink-500 text-pink-400':'border-slate-700 text-slate-500'}`}>迷你機</button></div>
+                                {form.mType==='std'?<div className="hk-input-group border-green-500/30"><input type="number" placeholder="金額 $" value={form.amt} onChange={e=>setForm({...form,amt:e.target.value})} className="hk-input text-lg font-mono-num font-bold text-green-400"/></div>:<div className="flex gap-3"><div className="hk-input-group"><input type="number" placeholder="上層" value={form.top} onChange={e=>setForm({...form,top:e.target.value})} className="hk-input font-mono-num"/></div><div className="hk-input-group"><input type="number" placeholder="下層" value={form.bot} onChange={e=>setForm({...form,bot:e.target.value})} className="hk-input font-mono-num"/></div></div>}
                                 <div className="hk-input-group"><input placeholder="備註..." value={form.note} onChange={e=>setForm({...form,note:e.target.value})} className="hk-input"/></div>
                             </>):(<>
-                                <div className="flex gap-2 overflow-x-auto no-scrollbar pb-1">{(settings.sources || []).map(s=><button key={s} onClick={()=>setForm({...form,source:s})} className={`px-3 py-2 rounded-xl text-xs font-bold border ${form.source===s?'bg-purple-600 border-purple-500 text-white':'border-slate-700 text-slate-400'}`}>{s}</button>)}</div>
+                                <div className="flex gap-2 overflow-x-auto no-scrollbar pb-1">{(settings.sources || []).map(s=><button key={s} onClick={()=>setForm({...form,source:s})} className={`px-3 py-1.5 rounded-lg text-xs font-bold border ${form.source===s?'bg-purple-600 border-purple-500 text-white':'border-slate-700 text-slate-400'}`}>{s}</button>)}</div>
                                 <div className="hk-input-group"><input placeholder="貨品名稱" value={form.item} onChange={e=>setForm({...form,item:e.target.value})} className="hk-input"/></div>
                                 <div className="flex gap-3"><div className="hk-input-group"><input type="number" placeholder="數量" value={form.qty} onChange={e=>setForm({...form,qty:e.target.value})} className="hk-input font-mono-num"/></div><div className="hk-input-group border-red-500/30"><input type="number" placeholder="成本 $" value={form.cost} onChange={e=>setForm({...form,cost:e.target.value})} className="hk-input text-red-400 font-bold font-mono-num"/></div></div>
                             </>)}
-                            <button onClick={submit} className="w-full py-3.5 bg-white text-black font-black rounded-2xl shadow-[0_0_20px_rgba(255,255,255,0.2)] active:scale-95 transition-transform flex items-center justify-center gap-2 text-sm"><Icon name="Save" size={18}/> 儲存記錄</button>
+                            <button onClick={submit} className="w-full py-3 bg-white text-black font-black rounded-2xl shadow-[0_0_15px_rgba(255,255,255,0.2)] active:scale-95 transition-transform flex items-center justify-center gap-2 text-sm"><Icon name="Save" size={16}/> 儲存記錄</button>
                         </div>
                     )}
                     <div className="space-y-3 pb-6">
-                        <div className="text-xs font-bold text-slate-500 ml-2 tracking-widest uppercase">所有活動 Recent</div>
-                        {records.slice(0,5).map(r=>(<div key={r.id} onClick={()=>!readOnly && onEdit(r)} className="glass-card p-4 rounded-2xl flex items-center justify-between cursor-pointer hover:bg-white/5 border-l-2 border-l-transparent hover:border-l-blue-500"><div className="flex items-center gap-3"><div className={`p-2 rounded-xl ${r.type==='stock'?'bg-red-500/20 text-red-400':'bg-emerald-500/20 text-emerald-400'}`}><Icon name={r.type==='stock'?'Package':r.type==='video'?'Film':r.type==='clockin'?'Timer':'Gamepad2'} size={18}/></div><div><div className="font-bold text-sm text-white">{r.venue||r.itemName||r.title||'打卡'}</div><div className="text-[10px] text-slate-400">{r.date}</div></div></div><div className={`font-mono-num font-bold text-lg ${r.type==='stock'?'text-red-400':'text-green-400'}`}>{r.type==='stock'?'-':'+'}${r.amount}</div></div>))}
+                        <div className="text-[10px] font-bold text-slate-500 ml-2 tracking-widest uppercase">所有活動 Recent</div>
+                        {records.slice(0,20).map(r=>(<div key={r.id} onClick={()=>!readOnly && onEdit(r)} className="glass-card p-3 rounded-2xl flex items-center justify-between cursor-pointer hover:bg-white/5 border-l-2 border-l-transparent hover:border-l-blue-500"><div className="flex items-center gap-3"><div className={`p-2 rounded-xl ${r.type==='stock'?'bg-red-500/20 text-red-400':'bg-emerald-500/20 text-emerald-400'}`}><Icon name={r.type==='stock'?'Package':r.type==='video'?'Film':r.type==='clockin'?'Timer':'Gamepad2'} size={16}/></div><div><div className="font-bold text-xs">{r.venue||r.itemName||r.title||'打卡'}</div><div className="text-[9px] text-slate-400">{r.date}</div></div></div><div className={`font-mono-num font-bold text-sm ${r.type==='stock'?'text-red-400':'text-green-400'}`}>{r.type==='stock'?'-':'+'}${r.amount}</div></div>))}
                     </div>
                 </div>
             );
@@ -511,18 +502,18 @@
 
             if(viewMonth && viewYear) {
                 const md = tree[viewYear]?.months[viewMonth] || {items:[]};
-                return (<div className="space-y-4"><button onClick={()=>setViewMonth(null)} className="text-xs font-bold text-slate-400 mb-2 flex items-center gap-1 hover:text-white"><Icon name="ArrowLeft" size={14}/> 返回月份</button><h2 className="text-xl font-bold text-blue-400 flex items-center gap-2"><Icon name="FolderOpen" size={24}/> {viewYear} / {viewMonth}</h2><div className="space-y-3 pb-20">{md.items.map(r=>(<div key={r.id} onClick={()=>{if(onEdit) onEdit(r)}} className="glass-card p-4 rounded-xl flex justify-between items-center cursor-pointer border-l-2 border-slate-600 hover:border-blue-500"><div><div className="font-bold text-sm text-white">{r.venue||r.itemName}</div><div className="text-[10px] text-slate-400">{r.date}</div></div><div className={`font-mono-num font-bold text-lg ${r.type==='stock'?'text-red-400':'text-green-400'}`}>${r.amount}</div></div>))}</div></div>);
+                return (<div className="space-y-4"><button onClick={()=>setViewMonth(null)} className="text-xs font-bold text-slate-400 mb-2 flex items-center gap-1 hover:text-white"><Icon name="ArrowLeft" size={14}/> Back</button><h2 className="text-lg font-bold text-blue-400 flex items-center gap-2"><Icon name="FolderOpen" size={18}/> {viewYear} / {viewMonth}</h2><div className="space-y-3 pb-20">{md.items.map(r=>(<div key={r.id} onClick={()=>{if(onEdit) onEdit(r)}} className="glass-card p-3 rounded-xl flex justify-between items-center cursor-pointer border-l-2 border-slate-600 hover:border-blue-500"><div><div className="font-bold text-xs">{r.venue||r.itemName}</div><div className="text-[9px] text-slate-400">{r.date}</div></div><div className={`font-mono-num font-bold text-sm ${r.type==='stock'?'text-red-400':'text-green-400'}`}>${r.amount}</div></div>))}</div></div>);
             }
             if(viewYear) {
-                return (<div className="space-y-4"><button onClick={()=>setViewYear(null)} className="text-xs font-bold text-slate-400 mb-2 flex items-center gap-1 hover:text-white"><Icon name="ArrowLeft" size={14}/> 返回年份</button><h2 className="text-xl font-bold text-white flex items-center gap-2"><Icon name="Archive" size={24}/> {viewYear}</h2><div className="grid grid-cols-2 gap-3">{Object.keys(tree[viewYear].months).sort((a,b)=>b-a).map(m=><button key={m} onClick={()=>setViewMonth(m)} className="glass-card p-5 rounded-2xl text-left hover:bg-white/5 transition-all"><Icon name="Folder" className="text-yellow-500 mb-2" size={28}/><div className="font-bold text-lg text-white">{m}月</div><div className="text-xs font-mono-num text-emerald-400 mt-1">NET: ${tree[viewYear].months[m].inc-tree[viewYear].months[m].exp}</div></button>)}</div></div>);
+                return (<div className="space-y-4"><button onClick={()=>setViewYear(null)} className="text-xs font-bold text-slate-400 mb-2 flex items-center gap-1 hover:text-white"><Icon name="ArrowLeft" size={14}/> Back</button><h2 className="text-lg font-bold text-white flex items-center gap-2"><Icon name="Archive" size={18}/> {viewYear}</h2><div className="grid grid-cols-2 gap-3">{Object.keys(tree[viewYear].months).sort((a,b)=>b-a).map(m=><button key={m} onClick={()=>setViewMonth(m)} className="glass-card p-4 rounded-2xl text-left hover:bg-white/5 transition-all"><Icon name="Folder" className="text-yellow-500 mb-2" size={24}/><div className="font-bold text-sm">{m}月</div><div className="text-[10px] font-mono-num text-emerald-400 mt-1">NET: ${tree[viewYear].months[m].inc-tree[viewYear].months[m].exp}</div></button>)}</div></div>);
             }
-            return (<div className="space-y-4"><h2 className="text-xl font-bold flex gap-2 text-white"><Icon name="Database" className="text-blue-500" size={24}/> 資料庫存檔</h2><div className="grid grid-cols-1 gap-3">{Object.keys(tree).sort((a,b)=>b-a).map(y=><button key={y} onClick={()=>setViewYear(y)} className="glass-card p-6 rounded-2xl flex justify-between items-center hover:bg-white/5"><div className="flex items-center gap-3"><div className="p-3 bg-blue-900/30 rounded-xl border border-blue-500/30"><Icon name="FolderArchive" className="text-blue-400" size={24}/></div><div className="text-left"><div className="font-bold text-xl text-white">{y}</div><div className="text-xs text-slate-400 uppercase">Yearly Total</div></div></div><div className="font-mono-num font-bold text-emerald-400 text-xl">${tree[y].total}</div></button>)}</div></div>);
+            return (<div className="space-y-4"><h2 className="text-lg font-bold flex gap-2 text-white"><Icon name="Database" className="text-blue-500" size={18}/> 存檔</h2><div className="grid grid-cols-1 gap-3">{Object.keys(tree).sort((a,b)=>b-a).map(y=><button key={y} onClick={()=>setViewYear(y)} className="glass-card p-5 rounded-2xl flex justify-between items-center hover:bg-white/5"><div className="flex items-center gap-3"><div className="p-2 bg-blue-900/30 rounded-lg border border-blue-500/30"><Icon name="FolderArchive" className="text-blue-400" size={20}/></div><div className="text-left"><div className="font-bold text-lg text-white">{y}</div><div className="text-[10px] text-slate-400 uppercase">Yearly Total</div></div></div><div className="font-mono-num font-bold text-emerald-400 text-lg">${tree[y].total}</div></button>)}</div></div>);
         };
 
         const VideoPage = ({ records, onAdd, onEdit, readOnly }) => {
             const [title, setTitle] = useState('');
             const toast = useContext(ToastContext);
-            return (<div className="space-y-4"><div className="glass-card p-5 rounded-3xl bg-gradient-to-r from-purple-900/40 to-slate-900 border border-purple-500/20"><div className="flex items-center gap-4 mb-4"><div className="p-3 bg-purple-600 rounded-xl shadow-[0_0_20px_rgba(147,51,234,0.4)]"><Icon name="Clapperboard" className="text-white" size={28}/></div><div><h2 className="font-bold text-lg text-white">影片獎勵</h2><p className="text-[10px] text-purple-300">每條 +$25</p></div></div>{!readOnly && <div className="flex gap-2"><div className="hk-input-group flex-1"><input value={title} onChange={e=>setTitle(e.target.value)} placeholder="影片標題 Title" className="hk-input text-sm"/></div><button onClick={()=>{if(title){onAdd({type:'video',title,date:new Date().toISOString().split('T')[0],amount:25});setTitle(''); toast('已新增');}}} className="bg-purple-600 px-4 rounded-xl text-white shadow-lg"><Icon name="Plus" size={20}/></button></div>}</div><div className="grid gap-2">{records.filter(r=>r.type==='video').map(r=><div key={r.id} onClick={()=>!readOnly && onEdit(r)} className="glass-card p-4 rounded-xl flex justify-between items-center border-l-4 border-purple-500 hover:bg-white/5 cursor-pointer"><div className="flex items-center gap-3"><Icon name="PlayCircle" className="text-purple-400" size={20}/><div><div className="font-bold text-sm text-white">{r.title}</div><div className="text-[10px] text-slate-500">{r.date}</div></div></div><span className="text-purple-400 font-bold font-mono-num text-lg">+$25</span></div>)}</div></div>);
+            return (<div className="space-y-4"><div className="glass-card p-5 rounded-3xl bg-gradient-to-r from-purple-900/40 to-slate-900 border border-purple-500/20"><div className="flex items-center gap-4 mb-4"><div className="p-3 bg-purple-600 rounded-xl shadow-[0_0_20px_rgba(147,51,234,0.4)]"><Icon name="Clapperboard" className="text-white" size={24}/></div><div><h2 className="font-bold text-lg text-white">影片獎勵</h2><p className="text-[10px] text-purple-300">每條 +$25</p></div></div>{!readOnly && <div className="flex gap-2"><div className="hk-input-group flex-1"><input value={title} onChange={e=>setTitle(e.target.value)} placeholder="影片標題 Title" className="hk-input text-sm"/></div><button onClick={()=>{if(title){onAdd({type:'video',title,date:new Date().toISOString().split('T')[0],amount:25});setTitle(''); toast('已新增');}}} className="bg-purple-600 px-4 rounded-xl text-white shadow-lg"><Icon name="Plus" size={18}/></button></div>}</div><div className="grid gap-2">{records.filter(r=>r.type==='video').map(r=><div key={r.id} onClick={()=>!readOnly && onEdit(r)} className="glass-card p-3 rounded-xl flex justify-between items-center border-l-2 border-purple-500 hover:bg-white/5 cursor-pointer"><div className="flex items-center gap-3"><Icon name="PlayCircle" className="text-purple-400" size={18}/><div><div className="font-bold text-xs text-white">{r.title}</div><div className="text-[9px] text-slate-500">{r.date}</div></div></div><span className="text-purple-400 font-bold font-mono-num text-sm">+$25</span></div>)}</div></div>);
         };
 
         const ClockPage = ({ records, onAdd, onEdit, user, readOnly }) => {
@@ -532,7 +523,7 @@
             const toast = useContext(ToastContext);
             useEffect(() => { const t = setInterval(() => setNow(new Date()), 1000); const s = localStorage.getItem('clock_start'); if (s) setStart(new Date(s)); return () => clearInterval(t); }, []);
             const toggle = () => { if (readOnly) return; if (!start) { const d = new Date(); setStart(d); localStorage.setItem('clock_start', d.toISOString()); toast('已上班打卡'); } else { const end = new Date(); const diffHrs = (end - start) / 3600000; const fullHrs = Math.floor(diffHrs); const mins = (diffHrs - fullHrs) * 60; let pay = fullHrs * 50; if (mins >= 45) pay += 50; else if (mins >= 30) pay += 25; setModal({ type: 'clockout', props: { hours: diffHrs.toFixed(2), range: `${start.toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})} - ${end.toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})}`, pay: pay, onConfirm: () => { onAdd({ type: 'clockin', date: end.toISOString().split('T')[0], amount: pay, notes: `${diffHrs.toFixed(2)}h` }); setStart(null); localStorage.removeItem('clock_start'); toast('已下班結算'); } } }); } };
-            return (<div className="flex flex-col items-center py-6"><div className="relative w-72 h-72 flex items-center justify-center mb-10"><div className="absolute inset-0 rounded-full border-2 border-slate-800"></div><div className={`absolute inset-0 rounded-full border-t-2 border-r-2 ${start ? 'border-green-500 animate-spin shadow-[0_0_30px_#10b981]' : 'border-blue-500 animate-[spin_10s_linear_infinite]'}`}></div><div className="absolute inset-4 rounded-full border border-white/5 bg-slate-900/50 backdrop-blur-md flex flex-col items-center justify-center"><div className="text-4xl font-black font-mono-num text-white tracking-widest">{now.toLocaleTimeString([], { hour12: false })}</div><div className="text-blue-400 font-bold mt-2 text-sm">{now.toLocaleDateString()}</div>{start && <div className="text-green-400 font-bold animate-pulse mt-2 tracking-[0.2em] text-glow-green text-xs">ON DUTY</div>}</div></div>{!readOnly && (<button onClick={toggle} className={`w-full max-w-xs py-4 rounded-2xl font-black text-lg tracking-widest shadow-2xl flex items-center justify-center gap-3 active:scale-95 transition-transform ${start ? 'bg-gradient-to-r from-red-600 to-rose-500' : 'bg-gradient-to-r from-blue-600 to-cyan-500'}`}><Icon name="Zap" className={start ? "" : "animate-pulse"}/>{start ? 'CLOCK OUT' : 'CLOCK IN'}</button>)}<div className="mt-6 w-full space-y-2">{records.filter(r => r.type === 'clockin').slice(0, 3).map(r => (<div key={r.id} onClick={() => { if (!readOnly) onEdit(r); }} className="glass-card p-3 rounded-xl flex justify-between text-xs border-l-2 border-yellow-500 cursor-pointer hover:bg-white/5"><span className="text-slate-400">{r.date}</span><span className="text-white">{r.notes}</span><span className="text-yellow-400 font-bold font-mono-num">${r.amount}</span></div>))}</div></div>);
+            return (<div className="flex flex-col items-center py-6"><div className="relative w-72 h-72 flex items-center justify-center mb-8"><div className="absolute inset-0 rounded-full border-2 border-slate-800"></div><div className={`absolute inset-0 rounded-full border-t-2 border-r-2 ${start ? 'border-green-500 animate-spin shadow-[0_0_30px_#10b981]' : 'border-blue-500 animate-[spin_10s_linear_infinite]'}`}></div><div className="absolute inset-4 rounded-full border border-white/5 bg-slate-900/50 backdrop-blur-md flex flex-col items-center justify-center"><div className="text-4xl font-black font-mono-num text-white tracking-widest">{now.toLocaleTimeString([], { hour12: false })}</div><div className="text-blue-400 font-bold mt-2 text-sm">{now.toLocaleDateString()}</div>{start && <div className="text-green-400 font-bold animate-pulse mt-2 tracking-[0.2em] text-glow-green text-xs">ON DUTY</div>}</div></div>{!readOnly && (<button onClick={toggle} className={`w-full max-w-xs py-4 rounded-2xl font-black text-lg tracking-widest shadow-2xl flex items-center justify-center gap-3 active:scale-95 transition-transform ${start ? 'bg-gradient-to-r from-red-600 to-rose-500' : 'bg-gradient-to-r from-blue-600 to-cyan-500'}`}><Icon name="Zap" className={start ? "" : "animate-pulse"}/>{start ? 'CLOCK OUT' : 'CLOCK IN'}</button>)}<div className="mt-6 w-full space-y-2">{records.filter(r => r.type === 'clockin').slice(0, 3).map(r => (<div key={r.id} onClick={() => { if (!readOnly) onEdit(r); }} className="glass-card p-3 rounded-xl flex justify-between text-xs border-l-2 border-yellow-500 cursor-pointer hover:bg-white/5"><span className="text-slate-400">{r.date}</span><span className="text-white">{r.notes}</span><span className="text-yellow-400 font-bold font-mono-num">${r.amount}</span></div>))}</div></div>);
         };
 
         const Summary = ({records}) => {
@@ -734,12 +725,10 @@
 
             const handleAdd = async (d) => { 
                 const nr={...d,id:Math.random().toString(36).slice(2),createdAt:new Date().toISOString()}; 
-                const ns=[nr,...records]; 
-                setRecords(ns); 
                 if(!user.isGuest) {
                     await db.collection('artifacts').doc('recordmachine').collection('users').doc(user.uid).collection('records').doc(nr.id).set(nr); 
                 } else {
-                    localStorage.setItem('guest_records',JSON.stringify(ns)); 
+                    const ns=[nr,...records]; setRecords(ns); localStorage.setItem('guest_records',JSON.stringify(ns)); 
                 }
             };
 
@@ -770,7 +759,7 @@
                     try {
                         await db.collection('artifacts').doc('recordmachine').collection('users').doc(user.uid).collection('settings').doc('profile').set(newSettings, {merge:true});
                     } catch (e) {
-                        alert("設定儲存失敗 (權限錯誤或網路問題)");
+                        alert("設定儲存失敗: " + e.message);
                     }
                 }
             };
