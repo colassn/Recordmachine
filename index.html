@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>機台收支管理系統 Pro V8.1</title>
+    <title>機台收支管理系統 Pro V8.2</title>
     
     <!-- React & Libraries -->
     <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
@@ -121,7 +121,7 @@
         .no-scrollbar::-webkit-scrollbar { display: none; }
         .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
         
-        .text-glow-green { text-shadow: 0 0 10px rgba(16, 185, 129, 0.5); }
+        .text-glow-green { text-shadow: 0 0 15px rgba(16, 185, 129, 0.6); }
         .pt-safe-top { padding-top: env(safe-area-inset-top, 20px); }
     </style>
 </head>
@@ -147,17 +147,14 @@
         if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
         const auth = firebase.auth();
         const db = firebase.firestore();
+        
+        // Define App ID globally for paths
+        const APP_ID = 'recordmachine';
 
-        // 啟用離線持久化 (Offline Persistence)
-        db.enablePersistence({ synchronizeTabs: true }).catch(err => {
-            if (err.code == 'failed-precondition') {
-                console.log('多個分頁開啟中，持久化僅在第一個分頁啟用');
-            } else if (err.code == 'unimplemented') {
-                console.log('瀏覽器不支援離線持久化');
-            }
-        });
+        // 離線支援
+        db.enablePersistence({ synchronizeTabs: true }).catch(err => console.log(err.code));
 
-        // --- Icon Component ---
+        // --- Icon ---
         const Icon = ({ name, size=20, className="", ...props }) => {
             const ref = useRef(null);
             useEffect(() => {
@@ -270,7 +267,7 @@
                             </div>
                         </div>
                         <h1 className="text-base font-black tracking-wide text-white leading-tight">機台收支</h1>
-                        <p className="text-[8px] text-blue-500 font-bold tracking-widest leading-none">(V8.1 永久版)</p>
+                        <p className="text-[8px] text-blue-500 font-bold tracking-widest leading-none">(V8.2)</p>
                     </div>
                     <div className="flex flex-col items-center justify-center gap-1 w-1/3">
                         <div className="glass-card px-2 py-0.5 rounded-full flex items-center justify-center gap-1.5 border border-white/10 bg-black/40 w-full max-w-[100px]">
@@ -317,14 +314,14 @@
 
             useEffect(() => {
                 if(user.isGuest) return;
-                const u1 = db.collection('artifacts').doc('recordmachine').collection('public').doc('data').collection('shares').where('ownerUid', '==', user.uid).onSnapshot(s => setMyShares(s.docs.map(d=>({id:d.id,...d.data()}))));
-                const u2 = db.collection('artifacts').doc('recordmachine').collection('public').doc('data').collection('shares').where('allowedEmail', '==', user.email).onSnapshot(s => setSharedWithMe(s.docs.map(d=>({id:d.id,...d.data()}))));
+                const u1 = db.collection('artifacts').doc(APP_ID).collection('public').doc('data').collection('shares').where('ownerUid', '==', user.uid).onSnapshot(s => setMyShares(s.docs.map(d=>({id:d.id,...d.data()}))));
+                const u2 = db.collection('artifacts').doc(APP_ID).collection('public').doc('data').collection('shares').where('allowedEmail', '==', user.email).onSnapshot(s => setSharedWithMe(s.docs.map(d=>({id:d.id,...d.data()}))));
                 return () => { u1(); u2(); };
             }, [user]);
 
             const sendInvite = async () => {
                 if(!inviteEmail) return;
-                await db.collection('artifacts').doc('recordmachine').collection('public').doc('data').collection('shares').add({
+                await db.collection('artifacts').doc(APP_ID).collection('public').doc('data').collection('shares').add({
                     ownerUid: user.uid, ownerEmail: user.email, allowedEmail: inviteEmail, createdAt: new Date().toISOString(), 
                     permissions: { accounting:true, data:true, video:true, clock:true, summary:true }
                 });
@@ -332,7 +329,7 @@
             };
 
             const togglePerm = async (id, k, v) => {
-                db.collection('artifacts').doc('recordmachine').collection('public').doc('data').collection('shares').doc(id).set({permissions:{[k]:!v}},{merge:true});
+                db.collection('artifacts').doc(APP_ID).collection('public').doc('data').collection('shares').doc(id).set({permissions:{[k]:!v}},{merge:true});
             };
 
             const delShare = async (id) => {
@@ -342,7 +339,7 @@
                         title: '停止分享?', 
                         message: '對方將無法查看您的資料', 
                         onConfirm: async () => {
-                            await db.collection('artifacts').doc('recordmachine').collection('public').doc('data').collection('shares').doc(id).delete();
+                            await db.collection('artifacts').doc(APP_ID).collection('public').doc('data').collection('shares').doc(id).delete();
                             toast('已停止分享');
                         }
                     }
@@ -351,7 +348,7 @@
 
             return (
                 <div className="fixed inset-0 z-[70] bg-black/90 backdrop-blur-md flex items-center justify-center p-4">
-                    <motion.div initial={{scale:0.95,opacity:0}} animate={{scale:1,opacity:1}} className="glass-modal w-full max-w-lg rounded-3xl p-5 h-[70vh] flex flex-col border border-slate-700/50">
+                    <motion.div initial={{scale:0.95,opacity:0}} animate={{scale:1,opacity:1}} className="glass-modal w-full max-w-lg rounded-3xl p-5 h-[70vh] flex flex-col border border-slate-700/50 bg-[#1a1a1d]">
                         <div className="flex justify-between items-center mb-4">
                             <h2 className="text-lg font-bold flex items-center gap-2"><Icon name="Share2" className="text-blue-400" size={20}/> 分享中樞</h2>
                             <button onClick={onClose}><Icon name="X" size={20}/></button>
@@ -484,12 +481,12 @@
                         <div className="glass-card p-5 rounded-3xl space-y-3 border-t-2 border-t-blue-500/30">
                             <div className="hk-input-group"><input type="date" value={form.date} onChange={e=>setForm({...form,date:e.target.value})} className="hk-input"/></div>
                             {mode==='machine'?(<>
-                                <div className="flex gap-2 overflow-x-auto no-scrollbar pb-1">{settings.venues.map(v=><button key={v} onClick={()=>setForm({...form,venue:v})} className={`px-3 py-1.5 rounded-lg text-xs font-bold border ${form.venue===v?'bg-blue-600 border-blue-500 text-white shadow-md':'border-slate-700 text-slate-400'}`}>{v}</button>)}</div>
+                                <div className="flex gap-2 overflow-x-auto no-scrollbar pb-1">{(settings.venues || []).map(v=><button key={v} onClick={()=>setForm({...form,venue:v})} className={`px-3 py-1.5 rounded-lg text-xs font-bold border ${form.venue===v?'bg-blue-600 border-blue-500 text-white shadow-md':'border-slate-700 text-slate-400'}`}>{v}</button>)}</div>
                                 <div className="grid grid-cols-2 gap-3"><button onClick={()=>setForm({...form,mType:'std'})} className={`py-2 rounded-xl text-xs font-bold border ${form.mType==='std'?'bg-blue-500/20 border-blue-500 text-blue-400':'border-slate-700 text-slate-500'}`}>標準機</button><button onClick={()=>setForm({...form,mType:'mini'})} className={`py-2 rounded-xl text-xs font-bold border ${form.mType==='mini'?'bg-pink-500/20 border-pink-500 text-pink-400':'border-slate-700 text-slate-500'}`}>迷你機</button></div>
                                 {form.mType==='std'?<div className="hk-input-group border-green-500/30"><input type="number" placeholder="金額 $" value={form.amt} onChange={e=>setForm({...form,amt:e.target.value})} className="hk-input text-lg font-mono-num font-bold text-green-400"/></div>:<div className="flex gap-3"><div className="hk-input-group"><input type="number" placeholder="上層" value={form.top} onChange={e=>setForm({...form,top:e.target.value})} className="hk-input font-mono-num"/></div><div className="hk-input-group"><input type="number" placeholder="下層" value={form.bot} onChange={e=>setForm({...form,bot:e.target.value})} className="hk-input font-mono-num"/></div></div>}
                                 <div className="hk-input-group"><input placeholder="備註..." value={form.note} onChange={e=>setForm({...form,note:e.target.value})} className="hk-input"/></div>
                             </>):(<>
-                                <div className="flex gap-2 overflow-x-auto no-scrollbar pb-1">{settings.sources.map(s=><button key={s} onClick={()=>setForm({...form,source:s})} className={`px-3 py-1.5 rounded-lg text-xs font-bold border ${form.source===s?'bg-purple-600 border-purple-500 text-white':'border-slate-700 text-slate-400'}`}>{s}</button>)}</div>
+                                <div className="flex gap-2 overflow-x-auto no-scrollbar pb-1">{(settings.sources || []).map(s=><button key={s} onClick={()=>setForm({...form,source:s})} className={`px-3 py-1.5 rounded-lg text-xs font-bold border ${form.source===s?'bg-purple-600 border-purple-500 text-white':'border-slate-700 text-slate-400'}`}>{s}</button>)}</div>
                                 <div className="hk-input-group"><input placeholder="貨品名稱" value={form.item} onChange={e=>setForm({...form,item:e.target.value})} className="hk-input"/></div>
                                 <div className="flex gap-3"><div className="hk-input-group"><input type="number" placeholder="數量" value={form.qty} onChange={e=>setForm({...form,qty:e.target.value})} className="hk-input font-mono-num"/></div><div className="hk-input-group border-red-500/30"><input type="number" placeholder="成本 $" value={form.cost} onChange={e=>setForm({...form,cost:e.target.value})} className="hk-input text-red-400 font-bold font-mono-num"/></div></div>
                             </>)}
@@ -536,9 +533,43 @@
         };
 
         const Summary = ({records}) => {
+            const [filter, setFilter] = useState(null);
             const s=records.reduce((a,r)=>{const v=Number(r.amount);if(r.type==='machine')a.m+=v;else if(r.type==='video')a.v+=v;else if(r.type==='clockin')a.c+=v;else if(r.type==='stock')a.s+=v;return a;},{m:0,v:0,c:0,s:0});
             const t=s.m+s.v+s.c-s.s;
-            return (<div className="space-y-4 pt-2"><div className="glass-card p-6 rounded-3xl text-center relative overflow-hidden"><div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500"></div><div className="text-[10px] text-slate-400 uppercase tracking-[0.2em] mb-1">Net Surplus</div><div className={`text-5xl font-black font-mono-num ${t>=0?'text-emerald-400 text-glow-green':'text-red-400 text-glow-red'}`}>${t.toLocaleString()}</div></div><div className="grid grid-cols-2 gap-3"><div className="glass-card p-3 rounded-2xl flex flex-col justify-between h-20 relative overflow-hidden"><div className="absolute top-0 right-0 p-2 opacity-10"><Icon name="TrendingUp" size={32}/></div><div className="text-[9px] text-slate-400 uppercase tracking-widest font-bold">Machine</div><div className="font-mono-num font-bold text-lg text-emerald-400 text-glow-green">{s.m.toLocaleString()}</div></div><div className="glass-card p-3 rounded-2xl flex flex-col justify-between h-20 relative overflow-hidden"><div className="absolute top-0 right-0 p-2 opacity-10"><Icon name="TrendingDown" size={32}/></div><div className="text-[9px] text-slate-400 uppercase tracking-widest font-bold">Stock</div><div className="font-mono-num font-bold text-lg text-rose-400 text-glow-red">{s.s.toLocaleString()}</div></div><div className="glass-card p-3 rounded-2xl flex flex-col justify-between h-20 relative overflow-hidden"><div className="absolute top-0 right-0 p-2 opacity-10"><Icon name="TrendingUp" size={32}/></div><div className="text-[9px] text-slate-400 uppercase tracking-widest font-bold">Clock</div><div className="font-mono-num font-bold text-lg text-amber-400">{s.c.toLocaleString()}</div></div><div className="glass-card p-3 rounded-2xl flex flex-col justify-between h-20 relative overflow-hidden"><div className="absolute top-0 right-0 p-2 opacity-10"><Icon name="TrendingUp" size={32}/></div><div className="text-[9px] text-slate-400 uppercase tracking-widest font-bold">Video</div><div className="font-mono-num font-bold text-lg text-blue-400 text-glow-blue">{s.v.toLocaleString()}</div></div></div></div>);
+
+            // Detail List Component
+            const DetailList = ({ type }) => {
+                const list = records.filter(r => r.type === type);
+                return (
+                    <div className="glass-card p-4 rounded-2xl mt-4 border border-white/10 bg-black/40">
+                         <div className="flex justify-between items-center mb-2">
+                             <h3 className="font-bold text-sm uppercase text-slate-300">{type} 詳細列表</h3>
+                             <button onClick={() => setFilter(null)} className="p-1 rounded-full hover:bg-white/10"><Icon name="X" size={16}/></button>
+                         </div>
+                         <div className="space-y-2 max-h-60 overflow-y-auto no-scrollbar">
+                             {list.map(r => (
+                                 <div key={r.id} className="flex justify-between text-xs p-2 rounded bg-white/5">
+                                     <span>{r.date} - {r.venue || r.itemName || r.title || '打卡'}</span>
+                                     <span className="font-mono-num text-green-400">${r.amount}</span>
+                                 </div>
+                             ))}
+                         </div>
+                    </div>
+                );
+            };
+
+            return (
+                <div className="space-y-4 pt-2">
+                    <div className="glass-card p-6 rounded-3xl text-center relative overflow-hidden"><div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500"></div><div className="text-[10px] text-slate-400 uppercase tracking-[0.2em] mb-1">Net Surplus</div><div className={`text-5xl font-black font-mono-num ${t>=0?'text-emerald-400 text-glow-green':'text-red-400 text-glow-red'}`}>${t.toLocaleString()}</div></div>
+                    <div className="grid grid-cols-2 gap-3">
+                        <div onClick={() => setFilter(filter === 'machine' ? null : 'machine')} className="glass-card p-3 rounded-2xl flex flex-col justify-between h-20 relative overflow-hidden cursor-pointer active:scale-95"><div className="absolute top-0 right-0 p-2 opacity-10"><Icon name="TrendingUp" size={32}/></div><div className="text-[9px] text-slate-400 uppercase tracking-widest font-bold">Machine</div><div className="font-mono-num font-bold text-lg text-emerald-400 text-glow-green">{s.m.toLocaleString()}</div></div>
+                        <div onClick={() => setFilter(filter === 'stock' ? null : 'stock')} className="glass-card p-3 rounded-2xl flex flex-col justify-between h-20 relative overflow-hidden cursor-pointer active:scale-95"><div className="absolute top-0 right-0 p-2 opacity-10"><Icon name="TrendingDown" size={32}/></div><div className="text-[9px] text-slate-400 uppercase tracking-widest font-bold">Stock</div><div className="font-mono-num font-bold text-lg text-rose-400 text-glow-red">{s.s.toLocaleString()}</div></div>
+                        <div onClick={() => setFilter(filter === 'clockin' ? null : 'clockin')} className="glass-card p-3 rounded-2xl flex flex-col justify-between h-20 relative overflow-hidden cursor-pointer active:scale-95"><div className="absolute top-0 right-0 p-2 opacity-10"><Icon name="TrendingUp" size={32}/></div><div className="text-[9px] text-slate-400 uppercase tracking-widest font-bold">Clock</div><div className="font-mono-num font-bold text-lg text-amber-400">{s.c.toLocaleString()}</div></div>
+                        <div onClick={() => setFilter(filter === 'video' ? null : 'video')} className="glass-card p-3 rounded-2xl flex flex-col justify-between h-20 relative overflow-hidden cursor-pointer active:scale-95"><div className="absolute top-0 right-0 p-2 opacity-10"><Icon name="TrendingUp" size={32}/></div><div className="text-[9px] text-slate-400 uppercase tracking-widest font-bold">Video</div><div className="font-mono-num font-bold text-lg text-blue-400 text-glow-blue">{s.v.toLocaleString()}</div></div>
+                    </div>
+                    {filter && <DetailList type={filter} />}
+                </div>
+            );
         };
 
         const SettingsPage = ({user, settings, onUpdate, logout, readOnly}) => {
@@ -547,11 +578,11 @@
             const toast = useContext(ToastContext);
             const setModal = useContext(ModalContext);
             
-            const add = (k,v) => { if(v){onUpdate({...settings,[k]:[...settings[k],v]}); k==='venues'?setNewVenue(''):setNewSource(''); toast('已新增');} };
+            const add = (k,v) => { if(v){onUpdate({...settings,[k]:[...(settings[k] || []),v]}); k==='venues'?setNewVenue(''):setNewSource(''); toast('已新增');} };
             const del = (k,v) => { 
                 setModal({
                     type: 'confirm',
-                    props: { title: '刪除選項?', message: `確定刪除 "${v}" 嗎?`, onConfirm: () => { onUpdate({...settings,[k]:settings[k].filter(x=>x!==v)}); toast('已刪除'); } }
+                    props: { title: '刪除選項?', message: `確定刪除 "${v}" 嗎? (需按儲存生效)`, onConfirm: () => { onUpdate({...settings,[k]:settings[k].filter(x=>x!==v)}); toast('已刪除'); } }
                 });
             };
             const handleSaveAll = () => { toast('設定已儲存 All Settings Saved', 'success'); };
@@ -570,13 +601,13 @@
 
                     <div className="glass-card p-5 rounded-3xl space-y-3">
                         <h3 className="font-bold text-slate-300 flex items-center gap-2 text-sm"><Icon name="MapPin" size={16}/> 場地</h3>
-                        <div className="flex flex-wrap gap-2">{settings.venues.map(v=><span key={v} className="px-2 py-1 bg-blue-900/30 rounded-lg text-[10px] flex items-center gap-2 border border-blue-500/30 text-blue-200">{v}<button onClick={()=>del('venues',v)}><Icon name="X" size={10}/></button></span>)}</div>
+                        <div className="flex flex-wrap gap-2">{(settings.venues || []).map(v=><span key={v} className="px-2 py-1 bg-blue-900/30 rounded-lg text-[10px] flex items-center gap-2 border border-blue-500/30 text-blue-200">{v}<button onClick={()=>del('venues',v)}><Icon name="X" size={10}/></button></span>)}</div>
                         <div className="flex gap-2"><div className="hk-input-group flex-1"><input value={newVenue} onChange={e=>setNewVenue(e.target.value)} placeholder="新場地" className="hk-input text-sm py-1.5"/></div><button onClick={()=>add('venues',newVenue)} className="px-3 bg-blue-600 rounded-xl"><Icon name="Plus" size={16}/></button></div>
                     </div>
 
                     <div className="glass-card p-5 rounded-3xl space-y-3">
                         <h3 className="font-bold text-slate-300 flex items-center gap-2 text-sm"><Icon name="Truck" size={16}/> 來源</h3>
-                        <div className="flex flex-wrap gap-2">{settings.sources.map(s=><span key={s} className="px-2 py-1 bg-purple-900/30 rounded-lg text-[10px] flex items-center gap-2 border border-purple-500/30 text-purple-200">{s}<button onClick={()=>del('sources',s)}><Icon name="X" size={10}/></button></span>)}</div>
+                        <div className="flex flex-wrap gap-2">{(settings.sources || []).map(s=><span key={s} className="px-2 py-1 bg-purple-900/30 rounded-lg text-[10px] flex items-center gap-2 border border-purple-500/30 text-purple-200">{s}<button onClick={()=>del('sources',s)}><Icon name="X" size={10}/></button></span>)}</div>
                         <div className="flex gap-2"><div className="hk-input-group flex-1"><input value={newSource} onChange={e=>setNewSource(e.target.value)} placeholder="新來源" className="hk-input text-sm py-1.5"/></div><button onClick={()=>add('sources',newSource)} className="px-3 bg-purple-600 rounded-xl"><Icon name="Plus" size={16}/></button></div>
                     </div>
                     
@@ -609,174 +640,6 @@
                             <button onClick={()=>authAct('guest')} className="text-slate-500 w-full text-center text-[10px] hover:text-white transition-colors">訪客試用 Guest Mode</button>
                         </div>
                     </div>
-                </div>
-            );
-        };
-
-        const App = () => {
-            const [user, setUser] = useState(null);
-            const [view, setView] = useState('accounting');
-            const [records, setRecords] = useState([]);
-            const [settings, setSettings] = useState({ venues: ['旺角中心','現時點','信和中心'], sources: ['淘寶','日拍'], nickname: '機主' });
-            const [monthlyEst, setMonthlyEst] = useState(0);
-            const [showShareModal, setShowShareModal] = useState(false);
-            const [viewingUser, setViewingUser] = useState(null);
-            const [activePermissions, setActivePermissions] = useState(null);
-            const [editingRecord, setEditingRecord] = useState(null);
-            const [isOnline, setIsOnline] = useState(navigator.onLine);
-
-            useEffect(() => {
-                const handleStatusChange = () => setIsOnline(navigator.onLine);
-                window.addEventListener('online', handleStatusChange);
-                window.addEventListener('offline', handleStatusChange);
-                return () => {
-                    window.removeEventListener('online', handleStatusChange);
-                    window.removeEventListener('offline', handleStatusChange);
-                };
-            }, []);
-
-            useEffect(() => {
-                auth.onAuthStateChanged(async (u) => {
-                    if (u) {
-                        setUser({ ...u, isGuest: false, displayName: u.displayName || '未命名' });
-                        const s = await db.collection('artifacts').doc('recordmachine').collection('users').doc(u.uid).collection('settings').doc('profile').get();
-                        if (s.exists) setSettings(prev => ({...prev, ...s.data()}));
-                        // Real-time listener for own records
-                        db.collection('artifacts').doc('recordmachine').collection('users').doc(u.uid).collection('records').orderBy('date', 'desc').limit(200)
-                            .onSnapshot(snap => {
-                                setRecords(snap.docs.map(d => ({id: d.id, ...d.data()})));
-                            });
-                    } else {
-                        const g = localStorage.getItem('guest');
-                        if (g) { setUser(JSON.parse(g)); setRecords(JSON.parse(localStorage.getItem('guest_records') || '[]')); setSettings(JSON.parse(localStorage.getItem('guest_settings') || JSON.stringify(settings))); }
-                    }
-                });
-            }, []);
-
-            useEffect(() => {
-                if (viewingUser) {
-                    const unsub = db.collection('artifacts').doc('recordmachine').collection('public').doc('data').collection('shares').doc(viewingUser.id)
-                        .onSnapshot(doc => {
-                            if(doc.exists) setActivePermissions(doc.data().permissions || {});
-                            else { alert("分享已停止"); setViewingUser(null); }
-                        });
-                    // Real-time listener for viewing records
-                    const unsubRecords = db.collection('artifacts').doc('recordmachine').collection('users').doc(viewingUser.ownerUid).collection('records').orderBy('date', 'desc').limit(200)
-                        .onSnapshot(snap => {
-                             setRecords(snap.docs.map(d => ({id: d.id, ...d.data()})));
-                        });
-
-                    return () => { unsub(); unsubRecords(); };
-                } else {
-                    setActivePermissions(null);
-                }
-            }, [viewingUser]);
-
-            useEffect(() => {
-                if (!records.length) { setMonthlyEst(0); return; }
-                const ym = new Date().toISOString().slice(0, 7);
-                const total = records.filter(r => r.date.startsWith(ym) && ['machine', 'video', 'clockin'].includes(r.type)).reduce((sum, r) => sum + (Number(r.amount) || 0), 0);
-                setMonthlyEst(total);
-            }, [records]);
-
-            const switchViewUser = async (shareObj) => {
-                if (!shareObj) {
-                    setViewingUser(null);
-                    // Re-bind own listener happens in auth effect, simpler to just reload or re-fetch one time if needed, but onSnapshot persists.
-                    // Actually for switching back, we rely on the main auth effect. But since that runs once, we might need to manually re-fetch or re-bind.
-                    // Simplified: Reload own data once.
-                    if(user && !user.isGuest) {
-                         const r = await db.collection('artifacts').doc('recordmachine').collection('users').doc(user.uid).collection('records').orderBy('date', 'desc').limit(200).get();
-                         setRecords(r.docs.map(d => ({id: d.id, ...d.data()})));
-                         // Re-bind own settings
-                         const s = await db.collection('artifacts').doc('recordmachine').collection('users').doc(user.uid).collection('settings').doc('profile').get();
-                         if(s.exists) setSettings(prev => ({...prev, ...s.data()}));
-                    }
-                } else {
-                    setViewingUser(shareObj);
-                    setActivePermissions(shareObj.permissions || {});
-                    // Settings needed for venue list etc
-                    const s = await db.collection('artifacts').doc('recordmachine').collection('users').doc(shareObj.ownerUid).collection('settings').doc('profile').get();
-                    if(s.exists) setSettings(prev => ({...prev, ...s.data()}));
-                }
-            };
-
-            const handleAdd = async (d) => { 
-                const nr={...d,id:Math.random().toString(36).slice(2),createdAt:new Date().toISOString()}; 
-                if(!user.isGuest) {
-                    await db.collection('artifacts').doc('recordmachine').collection('users').doc(user.uid).collection('records').doc(nr.id).set(nr); 
-                } else {
-                    const ns=[nr,...records]; setRecords(ns); localStorage.setItem('guest_records',JSON.stringify(ns)); 
-                }
-            };
-
-            const handleUpdate = async (d) => { 
-                if(!user.isGuest) {
-                    await db.collection('artifacts').doc('recordmachine').collection('users').doc(user.uid).collection('records').doc(d.id).set(d,{merge:true}); 
-                } else {
-                    const ns=records.map(r=>r.id===d.id?d:r); setRecords(ns); localStorage.setItem('guest_records',JSON.stringify(ns)); 
-                }
-                setEditingRecord(null); 
-            };
-
-            const handleDelete = async (id) => { 
-                if(!confirm("刪除?")) return; 
-                if(!user.isGuest) {
-                    await db.collection('artifacts').doc('recordmachine').collection('users').doc(user.uid).collection('records').doc(id).delete(); 
-                } else {
-                    const ns=records.filter(r=>r.id!==id); setRecords(ns); localStorage.setItem('guest_records',JSON.stringify(ns)); 
-                }
-                setEditingRecord(null); 
-            };
-            
-            const handleSettingsUpdate = async (newSettings) => {
-                // Optimistic UI update
-                setSettings(newSettings);
-                if (user.isGuest) {
-                    localStorage.setItem('guest_settings', JSON.stringify(newSettings));
-                } else {
-                    try {
-                        await db.collection('artifacts').doc('recordmachine').collection('users').doc(user.uid).collection('settings').doc('profile').set(newSettings, {merge:true});
-                    } catch (e) {
-                        alert("設定儲存失敗: " + e.message);
-                    }
-                }
-            };
-
-            if (!user) return <Login onLogin={(u) => { setUser(u); if(u.isGuest) loadGuestData(); }} />;
-
-            const isBlocked = viewingUser && activePermissions && activePermissions[view] === false;
-
-            return (
-                <div className="min-h-screen pb-10">
-                    <TopBar user={user} viewingUser={viewingUser} monthlyEst={monthlyEst} isOnline={isOnline} switchViewUser={switchViewUser} setShowShareModal={setShowShareModal} setView={setView} />
-                    
-                    <main className="pt-36 px-4 container mx-auto max-w-lg">
-                        <AnimatePresence mode="wait">
-                            {isBlocked ? (
-                                <motion.div key="blocked" initial={{opacity:0}} animate={{opacity:1}} className="h-[50vh] flex flex-col items-center justify-center text-center p-6 glass-card rounded-3xl border-red-500/30">
-                                    <Icon name="Lock" size={48} className="text-red-500 mb-4"/>
-                                    <h2 className="text-xl font-bold text-red-400">存取被拒絕</h2>
-                                </motion.div>
-                            ) : (
-                                <motion.div key={view} initial={{opacity:0, y:10}} animate={{opacity:1, y:0}} exit={{opacity:0, y:-10}} transition={{duration:0.25}}>
-                                    {view !== 'accounting' && <NavBar current={view} setView={setView} />}
-                                    
-                                    {view === 'accounting' && <Accounting records={records} onAdd={handleAdd} onEdit={setEditingRecord} settings={settings} readOnly={!!viewingUser} nav={<NavBar current={view} setView={setView} />} />}
-                                    {view === 'data' && <DataFolder records={records} onEdit={!viewingUser ? setEditingRecord : undefined} />}
-                                    {view === 'video' && <VideoPage records={records} onAdd={handleAdd} onEdit={setEditingRecord} readOnly={!!viewingUser} />}
-                                    {view === 'clock' && <ClockPage records={records} onAdd={handleAdd} onEdit={setEditingRecord} user={settings.nickname} readOnly={!!viewingUser} />}
-                                    {view === 'summary' && <Summary records={records} />}
-                                    {view === 'settings' && <SettingsPage user={user} settings={settings} onUpdate={handleSettingsUpdate} logout={() => {setUser(null); auth.signOut();}} readOnly={!!viewingUser} />}
-                                </motion.div>
-                            )}
-                        </AnimatePresence>
-                    </main>
-
-                    <AnimatePresence>
-                        {editingRecord && !viewingUser && <EditModal record={editingRecord} onClose={()=>setEditingRecord(null)} onUpdate={handleUpdate} onDelete={handleDelete} settings={settings} />}
-                        {showShareModal && <ShareCenter user={user} onClose={()=>setShowShareModal(false)} onSwitchUser={switchViewUser} />}
-                    </AnimatePresence>
                 </div>
             );
         };
