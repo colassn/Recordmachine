@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>機台收支管理系統 V10.1</title>
+    <title>機台收支管理系統 Pro V10.2</title>
     
     <!-- React & Libraries -->
     <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
@@ -74,7 +74,7 @@
         .glass-card:active { transform: scale(0.98); background: rgba(255, 255, 255, 0.08); }
 
         .glass-modal {
-            background: rgba(15, 15, 18, 0.95);
+            background: rgba(20, 20, 25, 0.98);
             backdrop-filter: blur(40px);
             border: 1px solid rgba(255, 255, 255, 0.1);
             box-shadow: 0 -20px 60px rgba(0,0,0,0.8);
@@ -139,11 +139,17 @@
         if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
         const auth = firebase.auth();
         const db = firebase.firestore();
-        
-        // 離線支援 (嘗試啟用)
+
+        // 嘗試啟用離線持久化 (Best Effort)
         try {
-            db.enablePersistence({ synchronizeTabs: true }).catch(err => console.log("Persistence error:", err.code));
-        } catch(e) { console.log("Persistence check skipped"); }
+            db.enablePersistence({ synchronizeTabs: true }).catch(err => {
+                if (err.code == 'failed-precondition') {
+                   console.log('Persistence failed: Multiple tabs open');
+                } else if (err.code == 'unimplemented') {
+                   console.log('Persistence failed: Browser not supported');
+                }
+            });
+        } catch(e) { console.log("Persistence init skipped"); }
 
         // --- Icon ---
         const Icon = ({ name, size=20, className="", ...props }) => {
@@ -258,7 +264,7 @@
                             </div>
                         </div>
                         <h1 className="text-base font-black tracking-wide text-white leading-tight mt-1">機台收支</h1>
-                        <p className="text-[8px] text-blue-500 font-bold tracking-widest leading-none">(V10.1)</p>
+                        <p className="text-[8px] text-blue-500 font-bold tracking-widest leading-none">(V10.2)</p>
                     </div>
                     
                     {/* 中間卡片 */}
@@ -273,7 +279,7 @@
                             </span>
                         </div>
                         <div className="glass-card px-3 py-1 rounded-full border border-white/10 bg-black/40 text-center w-full max-w-[120px] flex justify-between items-center px-2">
-                            <span className="text-[9px] text-slate-500 uppercase font-bold mr-1">預收</span>
+                            <span className="text-[8px] text-slate-500 uppercase font-bold mr-1">預收</span>
                             <span className="text-sm font-mono-num font-bold text-emerald-400 text-glow-green">${monthlyEst.toLocaleString()}</span>
                         </div>
                     </div>
@@ -452,6 +458,12 @@
             const [form, setForm] = useState({date: new Date().toISOString().split('T')[0], venue: settings.venues?.[0] || '', mType: 'std', amt: '', top: '', bot: '', note: '', source: settings.sources?.[0] || '', item: '', qty: '', cost: ''});
             const toast = useContext(ToastContext);
             
+            // Effect to set default values if settings change
+            useEffect(() => {
+                if(settings.venues?.length && !form.venue) setForm(f => ({...f, venue: settings.venues[0]}));
+                if(settings.sources?.length && !form.source) setForm(f => ({...f, source: settings.sources[0]}));
+            }, [settings]);
+
             const submit = () => {
                 if(readOnly) return;
                 if(mode==='machine') { 
@@ -462,7 +474,7 @@
                     if(!form.cost) return toast('請輸入成本', 'error');
                     onAdd({type:'stock',...form,amount:Number(form.cost)}); 
                 }
-                setForm({...form,amt:'',top:'',bot:'',cost:''}); toast('記錄已儲存');
+                setForm(f => ({...f, amt:'', top:'', bot:'', cost:''})); toast('記錄已儲存');
             };
 
             return (
