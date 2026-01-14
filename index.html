@@ -31,10 +31,29 @@
     <style>
         body {
             font-family: 'Noto Sans HK', sans-serif;
-            background: radial-gradient(circle at top right, #1e1b4b, #0f172a 60%, #000000);
+            background-color: #000;
             color: #e2e8f0;
             -webkit-tap-highlight-color: transparent;
             overscroll-behavior-y: none;
+        }
+
+        /* Textured Background for Main App */
+        .cyber-bg {
+            background-color: #0f172a;
+            background-image: 
+                linear-gradient(rgba(15, 23, 42, 0.92), rgba(15, 23, 42, 0.95)),
+                url('https://images.unsplash.com/photo-1555864326-5cf22ef123cf?q=80&w=2071&auto=format&fit=crop');
+            background-size: cover;
+            background-position: center;
+            background-attachment: fixed;
+        }
+        
+        /* Subtle Grid Overlay */
+        .grid-overlay {
+            background-size: 30px 30px;
+            background-image: linear-gradient(to right, rgba(255, 255, 255, 0.02) 1px, transparent 1px),
+                              linear-gradient(to bottom, rgba(255, 255, 255, 0.02) 1px, transparent 1px);
+            pointer-events: none;
         }
         
         .glass-panel {
@@ -97,6 +116,15 @@
             font-size: 0.75rem;
             display: flex; align-items: center; gap: 6px;
         }
+
+        /* Toggle Switch */
+        .toggle-checkbox:checked {
+            right: 0;
+            border-color: #06b6d4;
+        }
+        .toggle-checkbox:checked + .toggle-label {
+            background-color: #06b6d4;
+        }
     </style>
 </head>
 <body class="h-screen flex flex-col overflow-hidden text-slate-200">
@@ -154,10 +182,12 @@
     </div>
 
     <!-- Main App -->
-    <div id="app-container" class="hidden flex-1 flex flex-col h-full w-full max-w-md mx-auto bg-slate-900/50 relative shadow-2xl border-x border-slate-800">
-        
+    <div id="app-container" class="hidden flex-1 flex flex-col h-full w-full max-w-md mx-auto cyber-bg relative shadow-2xl border-x border-slate-800">
+        <!-- Grid Pattern Overlay -->
+        <div class="absolute inset-0 grid-overlay z-0 pointer-events-none opacity-50"></div>
+
         <!-- Header -->
-        <div class="px-5 pt-12 pb-4 flex justify-between items-center z-20 bg-slate-900/80 backdrop-blur-md sticky top-0 border-b border-slate-800">
+        <div class="px-5 pt-12 pb-2 flex justify-between items-center z-20 bg-slate-900/80 backdrop-blur-md sticky top-0 border-b border-slate-800">
             <div class="flex items-center gap-3 cursor-pointer group" onclick="openSettingsModal()">
                 <div class="relative">
                     <img id="user-avatar-img" src="" class="hidden w-11 h-11 rounded-full border-2 border-cyan-500/50 object-cover shadow-glow-cyan">
@@ -175,8 +205,19 @@
             </div>
         </div>
 
+        <!-- System Status Bar -->
+        <div class="px-5 py-1.5 bg-slate-900/60 backdrop-blur-md border-b border-slate-800 flex justify-between items-center z-10 sticky top-[76px]">
+            <span class="text-[9px] text-slate-500 font-mono tracking-widest flex items-center gap-1">
+                <i class="fas fa-microchip"></i> SYS.VER <span class="text-cyan-500">2.4.0</span>
+            </span>
+            <span id="db-status-badge" class="text-[9px] font-mono tracking-widest flex items-center gap-1.5 text-slate-500 transition-colors duration-500">
+                <span class="w-1.5 h-1.5 rounded-full bg-slate-500"></span>
+                CONNECTING...
+            </span>
+        </div>
+
         <!-- Content -->
-        <div id="content-area" class="flex-1 overflow-y-auto pb-24 scroll-smooth relative">
+        <div id="content-area" class="flex-1 overflow-y-auto pb-24 scroll-smooth relative z-10">
             
             <!-- Page: Counting -->
             <div id="page-counting" class="page-section p-5 space-y-5">
@@ -281,7 +322,7 @@
 
                 <!-- Recent List -->
                 <div>
-                    <h3 class="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-3 pl-1">Recent Activity</h3>
+                    <h3 class="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-3 pl-1">近期活動 (ALL)</h3>
                     <div id="recent-records-list" class="space-y-3 pb-4"></div>
                 </div>
             </div>
@@ -487,32 +528,48 @@
     <!-- Share Modal -->
     <div id="modal-share" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
         <div class="w-full max-w-md glass-panel p-6 rounded-2xl border border-slate-700">
-            <h3 class="text-lg font-bold text-white mb-4">資料分享</h3>
-            <p class="text-xs text-slate-400 mb-5">輸入對方 Email 邀請查看您的資料。</p>
+            <h3 class="text-lg font-bold text-white mb-6">資料分享</h3>
+            <p class="text-xs text-slate-400 mb-5">輸入對方 Email 邀請查看您的資料。請選擇允許對方查看的權限：</p>
             
-            <input type="email" id="share-email" placeholder="對方 Email" class="w-full glass-input rounded-xl p-3 mb-5 text-sm">
+            <input type="email" id="share-email" placeholder="對方 Email" class="w-full glass-input rounded-xl p-3 mb-6 text-sm">
             
-            <div class="space-y-3 mb-6">
-                <label class="flex items-center justify-between p-3 bg-slate-800/50 rounded-xl border border-slate-700 cursor-pointer hover:border-cyan-500/50 transition">
+            <div class="space-y-4 mb-8">
+                <!-- Toggle Item -->
+                <div class="flex items-center justify-between p-3 bg-slate-800/50 rounded-xl border border-slate-700">
                     <span class="text-sm font-bold text-slate-300">允許查看記帳明細</span>
-                    <input type="checkbox" checked class="accent-cyan-500 w-4 h-4">
-                </label>
-                <label class="flex items-center justify-between p-3 bg-slate-800/50 rounded-xl border border-slate-700 cursor-pointer hover:border-cyan-500/50 transition">
+                    <label class="relative inline-flex items-center cursor-pointer">
+                        <input type="checkbox" value="" class="sr-only peer toggle-checkbox" checked>
+                        <div class="w-11 h-6 bg-slate-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-cyan-600 toggle-label"></div>
+                    </label>
+                </div>
+                
+                <div class="flex items-center justify-between p-3 bg-slate-800/50 rounded-xl border border-slate-700">
                     <span class="text-sm font-bold text-slate-300">允許查看影片列表</span>
-                    <input type="checkbox" checked class="accent-cyan-500 w-4 h-4">
-                </label>
-                <label class="flex items-center justify-between p-3 bg-slate-800/50 rounded-xl border border-slate-700 cursor-pointer hover:border-cyan-500/50 transition">
+                    <label class="relative inline-flex items-center cursor-pointer">
+                        <input type="checkbox" value="" class="sr-only peer toggle-checkbox" checked>
+                        <div class="w-11 h-6 bg-slate-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-cyan-600 toggle-label"></div>
+                    </label>
+                </div>
+
+                <div class="flex items-center justify-between p-3 bg-slate-800/50 rounded-xl border border-slate-700">
                     <span class="text-sm font-bold text-slate-300">允許查看打卡記錄</span>
-                    <input type="checkbox" checked class="accent-cyan-500 w-4 h-4">
-                </label>
-                <label class="flex items-center justify-between p-3 bg-slate-800/50 rounded-xl border border-slate-700 cursor-pointer hover:border-cyan-500/50 transition">
+                    <label class="relative inline-flex items-center cursor-pointer">
+                        <input type="checkbox" value="" class="sr-only peer toggle-checkbox" checked>
+                        <div class="w-11 h-6 bg-slate-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-cyan-600 toggle-label"></div>
+                    </label>
+                </div>
+
+                <div class="flex items-center justify-between p-3 bg-slate-800/50 rounded-xl border border-slate-700">
                     <span class="text-sm font-bold text-slate-300">允許查看結算報表</span>
-                    <input type="checkbox" checked class="accent-cyan-500 w-4 h-4">
-                </label>
+                    <label class="relative inline-flex items-center cursor-pointer">
+                        <input type="checkbox" value="" class="sr-only peer toggle-checkbox" checked>
+                        <div class="w-11 h-6 bg-slate-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-cyan-600 toggle-label"></div>
+                    </label>
+                </div>
             </div>
 
-            <button type="button" onclick="sendShareInvite()" class="w-full bg-cyan-600 text-white font-bold py-3 rounded-xl shadow-lg">發送邀請</button>
-            <button type="button" onclick="closeModal('modal-share')" class="w-full text-slate-500 text-sm mt-3 hover:text-white">取消</button>
+            <button type="button" onclick="sendShareInvite()" class="w-full bg-cyan-600 text-white font-bold py-3 rounded-xl shadow-glow-cyan active:scale-95 transition">發送邀請</button>
+            <button type="button" onclick="closeModal('modal-share')" class="w-full text-slate-500 text-sm mt-3 hover:text-white pb-2">取消</button>
         </div>
     </div>
 
@@ -607,6 +664,19 @@
         function updateUIForUser() {
             document.getElementById('display-username').innerText = currentUser.displayName || settings.nickname || "使用者";
             document.getElementById('display-email').innerText = currentUser.email;
+            
+            // Update connection status display
+            const badge = document.getElementById('db-status-badge');
+            if(isGuest) {
+                badge.innerHTML = `<span class="w-1.5 h-1.5 rounded-full bg-yellow-500"></span> LOCAL ONLY`;
+                badge.classList.remove('text-emerald-500');
+                badge.classList.add('text-yellow-500');
+            } else {
+                badge.innerHTML = `<span class="w-1.5 h-1.5 rounded-full bg-emerald-500 shadow-[0_0_5px_rgba(16,185,129,0.8)] animate-pulse"></span> DB ONLINE`;
+                badge.classList.remove('text-yellow-500');
+                badge.classList.add('text-emerald-500');
+            }
+
             const avatarImg = document.getElementById('user-avatar-img');
             const avatarPlaceholder = document.getElementById('user-avatar-placeholder');
             if(currentUser.photoURL) {
@@ -640,6 +710,11 @@
             });
             onSnapshot(query(collection(db, getPath('videos')), orderBy('date', 'desc')), (snap) => {
                 videoData = snap.docs.map(d => ({id: d.id, ...d.data()}));
+                renderAll();
+            });
+            // Add Listener for Timesheets
+            onSnapshot(query(collection(db, getPath('timesheets')), orderBy('createdAt', 'desc')), (snap) => {
+                timesheetData = snap.docs.map(d => ({id: d.id, ...d.data()}));
                 renderAll();
             });
         }
@@ -802,21 +877,71 @@
         };
 
         function renderRecentRecords() {
+            // Unified Activity Feed logic
+            const allRecords = [
+                ...recordsData.map(r => ({...r, category: 'record', sortTime: new Date(r.date || r.createdAt).getTime()})),
+                ...videoData.map(v => ({...v, category: 'video', sortTime: new Date(v.date || v.createdAt).getTime()})),
+                ...timesheetData.map(t => ({...t, category: 'checkin', sortTime: new Date(t.start || t.createdAt).getTime()}))
+            ];
+
+            // Sort descending
+            allRecords.sort((a, b) => b.sortTime - a.sortTime);
+
+            // Slice top 10
+            const recent = allRecords.slice(0, 10);
+
             const el = document.getElementById('recent-records-list');
-            el.innerHTML = recordsData.slice(0, 5).map(i => `
-                <div class="glass-panel p-3 rounded-xl flex justify-between items-center cursor-pointer hover:bg-slate-800/50 transition border border-slate-700/50" onclick="openEditRecord('${i.id}')">
-                    <div class="flex items-center gap-3">
-                        <div class="w-8 h-8 rounded-lg ${i.type==='income'?'bg-cyan-500/10 text-cyan-400':'bg-red-500/10 text-red-400'} flex items-center justify-center">
-                            <i class="fas ${i.type==='income'?'fa-gamepad':'fa-box'}"></i>
+            
+            if(recent.length === 0) {
+                el.innerHTML = '<div class="text-center text-slate-500 text-xs py-4">暫無活動記錄</div>';
+                return;
+            }
+
+            el.innerHTML = recent.map(item => {
+                let icon, color, title, sub, amountStr, amountColor, clickAction;
+
+                if (item.category === 'record') {
+                    const isIncome = item.type === 'income';
+                    icon = isIncome ? 'fa-gamepad' : 'fa-box';
+                    color = isIncome ? 'text-cyan-400' : 'text-red-400';
+                    title = isIncome ? item.venue : item.name;
+                    sub = item.date;
+                    amountStr = (isIncome ? '+' : '-') + '$' + item.amount;
+                    amountColor = color;
+                    clickAction = `openEditRecord('${item.id}')`;
+                } else if (item.category === 'video') {
+                    icon = 'fa-video';
+                    color = 'text-purple-400';
+                    title = item.title;
+                    sub = new Date(item.date).toLocaleDateString();
+                    amountStr = '+$25';
+                    amountColor = color;
+                    clickAction = `openEditVideo('${item.id}')`;
+                } else if (item.category === 'checkin') {
+                    icon = 'fa-clock';
+                    color = 'text-green-400';
+                    title = '打卡工資';
+                    sub = new Date(item.start).toLocaleDateString();
+                    amountStr = '+$' + item.wage;
+                    amountColor = color;
+                    clickAction = `openEditCheckin('${item.id}')`;
+                }
+
+                return `
+                    <div class="glass-panel p-3 rounded-xl flex justify-between items-center cursor-pointer hover:bg-slate-800/50 transition border border-slate-700/50 mb-2" onclick="${clickAction}">
+                        <div class="flex items-center gap-3">
+                            <div class="w-8 h-8 rounded-lg bg-slate-800 border border-slate-700 ${color} flex items-center justify-center">
+                                <i class="fas ${icon}"></i>
+                            </div>
+                            <div>
+                                <div class="font-bold text-slate-200 text-sm">${title}</div>
+                                <div class="text-[10px] text-slate-500">${sub}</div>
+                            </div>
                         </div>
-                        <div>
-                            <div class="font-bold text-slate-200 text-sm">${i.type==='income'?i.venue:i.name}</div>
-                            <div class="text-[10px] text-slate-500">${i.date}</div>
-                        </div>
+                        <div class="font-mono font-bold ${amountColor}">${amountStr}</div>
                     </div>
-                    <div class="font-mono font-bold ${i.type==='income'?'text-cyan-400':'text-red-400'}">${i.type==='income'?'+':'-'}$${i.amount}</div>
-                </div>
-            `).join('');
+                `;
+            }).join('');
         }
 
         function calculateAggregates() {
@@ -925,15 +1050,22 @@
             document.getElementById('btn-clock-out').classList.add('bg-red-600', 'text-white', 'shadow-[0_0_20px_rgba(220,38,38,0.4)]');
         };
 
-        window.clockOut = () => {
+        window.clockOut = async () => {
             if(!workStart) return;
             const end = new Date();
             const mins = (end - workStart) / 1000 / 60;
             const blocks = Math.round(mins / 30);
             const wage = blocks * 25;
             const record = { type: 'checkin', start: workStart.toISOString(), end: end.toISOString(), wage, createdAt: new Date().toISOString() };
-            timesheetData.push({...record, id: 'sess_'+Date.now()}); 
-            if(isGuest) saveGuestData();
+            
+            if(isGuest) {
+                timesheetData.push({...record, id: 'sess_'+Date.now()}); 
+                saveGuestData();
+            } else {
+                // Add to Firestore so it syncs with Recent Records
+                await addDoc(collection(db, getPath('timesheets')), record);
+            }
+
             workStart = null;
             document.getElementById('btn-clock-in').disabled = false;
             document.getElementById('btn-clock-in').classList.remove('opacity-50');
@@ -1094,8 +1226,8 @@
                 else recordsData = recordsData.filter(x=>x.id!==id);
                 saveGuestData();
             } else {
-                 const col = type === 'video' ? 'videos' : 'records';
-                 if(type !== 'checkin') await deleteDoc(doc(db, getPath(col), id));
+                 const col = type === 'video' ? 'videos' : (type === 'checkin' ? 'timesheets' : 'records');
+                 await deleteDoc(doc(db, getPath(col), id));
             }
             showToast("已刪除"); closeModal('modal-edit');
         };
