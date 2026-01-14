@@ -2,7 +2,7 @@
 <html lang="zh-HK">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>機台收支管理系統</title>
     <!-- Theme: Cyberpunk/Future Dark -->
     
@@ -35,6 +35,9 @@
             color: #e2e8f0;
             -webkit-tap-highlight-color: transparent;
             overscroll-behavior-y: none;
+            /* Critical fix for mobile browsers */
+            height: 100dvh; 
+            width: 100vw;
         }
 
         /* Textured Background for Main App */
@@ -125,9 +128,14 @@
         .toggle-checkbox:checked + .toggle-label {
             background-color: #06b6d4;
         }
+
+        /* Safe Area Fix for Bottom Nav */
+        .safe-area-pb {
+            padding-bottom: env(safe-area-inset-bottom, 20px);
+        }
     </style>
 </head>
-<body class="h-screen flex flex-col overflow-hidden text-slate-200">
+<body class="flex flex-col overflow-hidden text-slate-200">
 
     <!-- Auth Screen -->
     <div id="auth-screen" class="fixed inset-0 z-50 flex flex-col justify-center items-center p-6 bg-[url('https://images.unsplash.com/photo-1555864326-5cf22ef123cf?q=80&w=2071&auto=format&fit=crop')] bg-cover bg-center">
@@ -187,7 +195,7 @@
         <div class="absolute inset-0 grid-overlay z-0 pointer-events-none opacity-50"></div>
 
         <!-- Header -->
-        <div class="px-5 pt-12 pb-2 flex justify-between items-center z-20 bg-slate-900/80 backdrop-blur-md sticky top-0 border-b border-slate-800">
+        <div class="px-5 pt-safe-top pb-2 flex justify-between items-center z-20 bg-slate-900/80 backdrop-blur-md sticky top-0 border-b border-slate-800 pt-8 sm:pt-12">
             <div class="flex items-center gap-3 cursor-pointer group" onclick="openSettingsModal()">
                 <div class="relative">
                     <img id="user-avatar-img" src="" class="hidden w-11 h-11 rounded-full border-2 border-cyan-500/50 object-cover shadow-glow-cyan">
@@ -206,7 +214,7 @@
         </div>
 
         <!-- System Status Bar -->
-        <div class="px-5 py-1.5 bg-slate-900/60 backdrop-blur-md border-b border-slate-800 flex justify-between items-center z-10 sticky top-[76px]">
+        <div class="px-5 py-1.5 bg-slate-900/60 backdrop-blur-md border-b border-slate-800 flex justify-between items-center z-10 sticky top-[72px] sm:top-[76px]">
             <span class="text-[9px] text-slate-500 font-mono tracking-widest flex items-center gap-1">
                 <i class="fas fa-microchip"></i> SYS.VER <span class="text-cyan-500">2.4.0</span>
             </span>
@@ -443,8 +451,8 @@
 
         </div>
 
-        <!-- Navigation -->
-        <div class="px-2 py-2 flex justify-around items-center z-40 bg-slate-900/90 backdrop-blur-md border-t border-slate-800 safe-area-pb">
+        <!-- Navigation (Fixed to bottom safe area) -->
+        <div class="px-2 py-2 flex justify-around items-center z-40 bg-slate-900/90 backdrop-blur-md border-t border-slate-800 safe-area-pb absolute bottom-0 w-full">
             <button onclick="navTo('counting')" class="nav-item active w-full py-3 flex flex-col items-center group" data-target="counting">
                 <i class="fas fa-calculator text-lg mb-1 transition-transform group-hover:scale-110"></i>
                 <span class="text-[9px] font-bold tracking-widest uppercase">記數</span>
@@ -528,48 +536,32 @@
     <!-- Share Modal -->
     <div id="modal-share" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
         <div class="w-full max-w-md glass-panel p-6 rounded-2xl border border-slate-700">
-            <h3 class="text-lg font-bold text-white mb-6">資料分享</h3>
-            <p class="text-xs text-slate-400 mb-5">輸入對方 Email 邀請查看您的資料。請選擇允許對方查看的權限：</p>
+            <h3 class="text-lg font-bold text-white mb-4">資料分享</h3>
+            <p class="text-xs text-slate-400 mb-5">輸入對方 Email 邀請查看您的資料。</p>
             
-            <input type="email" id="share-email" placeholder="對方 Email" class="w-full glass-input rounded-xl p-3 mb-6 text-sm">
+            <input type="email" id="share-email" placeholder="對方 Email" class="w-full glass-input rounded-xl p-3 mb-5 text-sm">
             
-            <div class="space-y-4 mb-8">
-                <!-- Toggle Item -->
-                <div class="flex items-center justify-between p-3 bg-slate-800/50 rounded-xl border border-slate-700">
+            <div class="space-y-3 mb-6">
+                <label class="flex items-center justify-between p-3 bg-slate-800/50 rounded-xl border border-slate-700 cursor-pointer hover:border-cyan-500/50 transition">
                     <span class="text-sm font-bold text-slate-300">允許查看記帳明細</span>
-                    <label class="relative inline-flex items-center cursor-pointer">
-                        <input type="checkbox" value="" class="sr-only peer toggle-checkbox" checked>
-                        <div class="w-11 h-6 bg-slate-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-cyan-600 toggle-label"></div>
-                    </label>
-                </div>
-                
-                <div class="flex items-center justify-between p-3 bg-slate-800/50 rounded-xl border border-slate-700">
+                    <input type="checkbox" checked class="accent-cyan-500 w-4 h-4">
+                </label>
+                <label class="flex items-center justify-between p-3 bg-slate-800/50 rounded-xl border border-slate-700 cursor-pointer hover:border-cyan-500/50 transition">
                     <span class="text-sm font-bold text-slate-300">允許查看影片列表</span>
-                    <label class="relative inline-flex items-center cursor-pointer">
-                        <input type="checkbox" value="" class="sr-only peer toggle-checkbox" checked>
-                        <div class="w-11 h-6 bg-slate-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-cyan-600 toggle-label"></div>
-                    </label>
-                </div>
-
-                <div class="flex items-center justify-between p-3 bg-slate-800/50 rounded-xl border border-slate-700">
+                    <input type="checkbox" checked class="accent-cyan-500 w-4 h-4">
+                </label>
+                <label class="flex items-center justify-between p-3 bg-slate-800/50 rounded-xl border border-slate-700 cursor-pointer hover:border-cyan-500/50 transition">
                     <span class="text-sm font-bold text-slate-300">允許查看打卡記錄</span>
-                    <label class="relative inline-flex items-center cursor-pointer">
-                        <input type="checkbox" value="" class="sr-only peer toggle-checkbox" checked>
-                        <div class="w-11 h-6 bg-slate-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-cyan-600 toggle-label"></div>
-                    </label>
-                </div>
-
-                <div class="flex items-center justify-between p-3 bg-slate-800/50 rounded-xl border border-slate-700">
+                    <input type="checkbox" checked class="accent-cyan-500 w-4 h-4">
+                </label>
+                <label class="flex items-center justify-between p-3 bg-slate-800/50 rounded-xl border border-slate-700 cursor-pointer hover:border-cyan-500/50 transition">
                     <span class="text-sm font-bold text-slate-300">允許查看結算報表</span>
-                    <label class="relative inline-flex items-center cursor-pointer">
-                        <input type="checkbox" value="" class="sr-only peer toggle-checkbox" checked>
-                        <div class="w-11 h-6 bg-slate-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-cyan-600 toggle-label"></div>
-                    </label>
-                </div>
+                    <input type="checkbox" checked class="accent-cyan-500 w-4 h-4">
+                </label>
             </div>
 
-            <button type="button" onclick="sendShareInvite()" class="w-full bg-cyan-600 text-white font-bold py-3 rounded-xl shadow-glow-cyan active:scale-95 transition">發送邀請</button>
-            <button type="button" onclick="closeModal('modal-share')" class="w-full text-slate-500 text-sm mt-3 hover:text-white pb-2">取消</button>
+            <button type="button" onclick="sendShareInvite()" class="w-full bg-cyan-600 text-white font-bold py-3 rounded-xl shadow-lg">發送邀請</button>
+            <button type="button" onclick="closeModal('modal-share')" class="w-full text-slate-500 text-sm mt-3 hover:text-white">取消</button>
         </div>
     </div>
 
