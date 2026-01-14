@@ -17,11 +17,15 @@
                 extend: {
                     colors: {
                         dark: { 900: '#0f172a', 800: '#1e293b', 700: '#334155' },
-                        neon: { blue: '#3b82f6', cyan: '#06b6d4', purple: '#8b5cf6', pink: '#ec4899' }
+                        neon: { blue: '#3b82f6', cyan: '#06b6d4', purple: '#8b5cf6', pink: '#ec4899', green: '#10b981' }
                     },
                     boxShadow: {
-                        'glow-cyan': '0 0 15px rgba(6, 182, 212, 0.5)',
-                        'glow-purple': '0 0 15px rgba(139, 92, 246, 0.5)',
+                        'glow-cyan': '0 0 20px rgba(6, 182, 212, 0.4)',
+                        'glow-purple': '0 0 20px rgba(139, 92, 246, 0.4)',
+                        'glow-green': '0 0 20px rgba(16, 185, 129, 0.4)',
+                    },
+                    animation: {
+                        'pulse-fast': 'pulse 1.5s cubic-bezier(0.4, 0, 0.6, 1) infinite',
                     }
                 }
             }
@@ -35,12 +39,13 @@
             color: #e2e8f0;
             -webkit-tap-highlight-color: transparent;
             overscroll-behavior-y: none;
-            /* Critical fix for mobile browsers */
             height: 100dvh; 
             width: 100vw;
+            display: flex;
+            justify-content: center;
+            align-items: center;
         }
 
-        /* Textured Background for Main App */
         .cyber-bg {
             background-color: #0f172a;
             background-image: 
@@ -51,7 +56,6 @@
             background-attachment: fixed;
         }
         
-        /* Subtle Grid Overlay */
         .grid-overlay {
             background-size: 30px 30px;
             background-image: linear-gradient(to right, rgba(255, 255, 255, 0.02) 1px, transparent 1px),
@@ -80,7 +84,6 @@
             outline: none;
         }
 
-        /* Custom Scrollbar */
         ::-webkit-scrollbar { width: 4px; }
         ::-webkit-scrollbar-track { background: transparent; }
         ::-webkit-scrollbar-thumb { background: #475569; border-radius: 10px; }
@@ -88,15 +91,14 @@
         .nav-item.active { color: #06b6d4; text-shadow: 0 0 10px rgba(6, 182, 212, 0.5); }
         .nav-item.active i { transform: translateY(-4px) scale(1.1); transition: all 0.3s; }
 
-        .chart-container { position: relative; width: 100%; max-width: 600px; margin: 0 auto; height: 280px; }
+        .chart-container { position: relative; width: 100%; height: 280px; }
 
-        /* Fixed Custom Select UI */
         .custom-select-wrapper { position: relative; width: 100%; }
         .custom-select-trigger { cursor: pointer; position: relative; z-index: 10; }
         .custom-select-options {
             position: absolute;
             top: 100%; left: 0; right: 0;
-            z-index: 50; /* Ensure high z-index */
+            z-index: 50;
             background: #1e293b;
             border: 1px solid #334155;
             border-radius: 0.5rem;
@@ -120,67 +122,70 @@
             display: flex; align-items: center; gap: 6px;
         }
 
-        /* Toggle Switch */
-        .toggle-checkbox:checked {
-            right: 0;
-            border-color: #06b6d4;
+        .toggle-checkbox:checked { right: 0; border-color: #06b6d4; }
+        .toggle-checkbox:checked + .toggle-label { background-color: #06b6d4; }
+        .safe-area-pb { padding-bottom: env(safe-area-inset-bottom, 20px); }
+
+        .notif-dot {
+            position: absolute; top: -2px; right: -2px; width: 10px; height: 10px;
+            background-color: #ef4444; border-radius: 50%; border: 2px solid #1e293b;
+            display: none;
         }
-        .toggle-checkbox:checked + .toggle-label {
-            background-color: #06b6d4;
+        .notif-dot.active { display: block; animation: pulse 2s infinite; }
+        
+        .shared-banner {
+            background: repeating-linear-gradient(45deg, #1e1b4b, #1e1b4b 10px, #312e81 10px, #312e81 20px);
+            border-bottom: 2px solid #6366f1;
         }
 
-        /* Safe Area Fix for Bottom Nav */
-        .safe-area-pb {
-            padding-bottom: env(safe-area-inset-bottom, 20px);
+        #app-container {
+            transition: all 0.3s ease;
+        }
+        @media (min-width: 768px) {
+            #app-container {
+                height: 95vh;
+                max-height: 1000px;
+                border-radius: 24px;
+                overflow: hidden;
+                border: 1px solid #334155;
+                box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+            }
+            .page-section {
+                padding: 2rem;
+            }
         }
     </style>
 </head>
-<body class="flex flex-col overflow-hidden text-slate-200">
+<body class="cyber-bg w-full h-screen overflow-hidden text-slate-200">
 
     <!-- Auth Screen -->
     <div id="auth-screen" class="fixed inset-0 z-50 flex flex-col justify-center items-center p-6 bg-[url('https://images.unsplash.com/photo-1555864326-5cf22ef123cf?q=80&w=2071&auto=format&fit=crop')] bg-cover bg-center">
         <div class="absolute inset-0 bg-slate-900/90 backdrop-blur-sm"></div>
         <div class="w-full max-w-sm glass-panel p-8 rounded-2xl relative z-10 border border-slate-700/50">
             <h1 class="text-4xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-purple-500 mb-2 text-center drop-shadow-lg">機台中樞</h1>
-            <p class="text-slate-400 text-center text-xs mb-8 tracking-[0.3em] uppercase">System Access V2.0</p>
+            <p class="text-slate-400 text-center text-xs mb-8 tracking-[0.3em] uppercase">System Access V3.1.1</p>
 
-            <!-- Login View -->
             <div id="auth-view-login" class="space-y-4">
                 <button onclick="handleGoogleLogin()" class="w-full bg-white text-slate-900 font-bold py-3.5 px-4 rounded-xl mb-4 flex items-center justify-center gap-3 hover:bg-cyan-50 transition-all active:scale-95">
                     <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" class="w-5 h-5" alt="Google">
                     <span>Google 登入</span>
                 </button>
-
                 <div class="relative my-4">
                     <div class="absolute inset-0 flex items-center"><div class="w-full border-t border-slate-600"></div></div>
                     <div class="relative flex justify-center text-xs"><span class="px-2 bg-slate-800 text-slate-500 rounded">OR</span></div>
                 </div>
-
                 <input type="email" id="login-email" placeholder="電子郵件" class="w-full glass-input rounded-xl px-4 py-3 text-sm placeholder-slate-500">
                 <input type="password" id="login-pass" placeholder="密碼" class="w-full glass-input rounded-xl px-4 py-3 text-sm placeholder-slate-500">
-                
-                <button onclick="handleEmailLogin()" class="w-full bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white py-3 rounded-xl text-sm font-bold shadow-glow-cyan transition active:scale-95">
-                    進入系統
-                </button>
-
-                <p class="text-center text-xs text-slate-400 mt-4">
-                    還沒有帳號？ <button onclick="toggleAuthView('register')" class="text-cyan-400 font-bold hover:underline">立即註冊</button>
-                </p>
+                <button onclick="handleEmailLogin()" class="w-full bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white py-3 rounded-xl text-sm font-bold shadow-glow-cyan transition active:scale-95">進入系統</button>
+                <p class="text-center text-xs text-slate-400 mt-4">還沒有帳號？ <button onclick="toggleAuthView('register')" class="text-cyan-400 font-bold hover:underline">立即註冊</button></p>
             </div>
 
-            <!-- Register View -->
             <div id="auth-view-register" class="space-y-4 hidden">
                 <h3 class="text-white text-center font-bold mb-4">註冊新帳號</h3>
                 <input type="email" id="reg-email" placeholder="輸入電子郵件" class="w-full glass-input rounded-xl px-4 py-3 text-sm placeholder-slate-500">
                 <input type="password" id="reg-pass" placeholder="設定密碼" class="w-full glass-input rounded-xl px-4 py-3 text-sm placeholder-slate-500">
-                
-                <button onclick="handleEmailRegister()" class="w-full bg-slate-700 hover:bg-slate-600 text-white py-3 rounded-xl text-sm font-bold transition active:scale-95">
-                    確認註冊
-                </button>
-
-                <p class="text-center text-xs text-slate-400 mt-4">
-                    已有帳號？ <button onclick="toggleAuthView('login')" class="text-cyan-400 font-bold hover:underline">返回登入</button>
-                </p>
+                <button onclick="handleEmailRegister()" class="w-full bg-slate-700 hover:bg-slate-600 text-white py-3 rounded-xl text-sm font-bold transition active:scale-95">確認註冊</button>
+                <p class="text-center text-xs text-slate-400 mt-4">已有帳號？ <button onclick="toggleAuthView('login')" class="text-cyan-400 font-bold hover:underline">返回登入</button></p>
             </div>
 
             <button onclick="handleGuestLogin()" class="block w-full text-center text-slate-500 hover:text-cyan-400 text-xs transition-colors mt-6 pt-4 border-t border-slate-700">
@@ -189,13 +194,17 @@
         </div>
     </div>
 
-    <!-- Main App -->
-    <div id="app-container" class="hidden flex-1 flex flex-col h-full w-full max-w-md mx-auto cyber-bg relative shadow-2xl border-x border-slate-800">
-        <!-- Grid Pattern Overlay -->
+    <!-- Main App Container -->
+    <div id="app-container" class="hidden flex flex-col w-full h-full md:max-w-4xl lg:max-w-6xl mx-auto bg-slate-900/80 backdrop-blur-md relative shadow-2xl border-x border-slate-800 md:rounded-2xl overflow-hidden">
         <div class="absolute inset-0 grid-overlay z-0 pointer-events-none opacity-50"></div>
 
+        <!-- Shared Mode Banner -->
+        <div id="shared-mode-banner" class="hidden px-4 py-1 text-xs text-center text-indigo-300 font-bold shared-banner z-30 sticky top-0">
+            <i class="fas fa-eye mr-2"></i> 正在檢視共享資料 (唯讀模式) <button onclick="exitSharedMode()" class="ml-2 underline text-white">退出</button>
+        </div>
+
         <!-- Header -->
-        <div class="px-5 pt-safe-top pb-2 flex justify-between items-center z-20 bg-slate-900/80 backdrop-blur-md sticky top-0 border-b border-slate-800 pt-8 sm:pt-12">
+        <div class="px-5 pt-safe-top pb-2 flex justify-between items-center z-20 bg-slate-900/90 backdrop-blur-md sticky border-b border-slate-800 pt-8 sm:pt-6 top-0" id="main-header">
             <div class="flex items-center gap-3 cursor-pointer group" onclick="openSettingsModal()">
                 <div class="relative">
                     <img id="user-avatar-img" src="" class="hidden w-11 h-11 rounded-full border-2 border-cyan-500/50 object-cover shadow-glow-cyan">
@@ -208,389 +217,124 @@
                 </div>
             </div>
             <div class="flex gap-2">
+                <button onclick="openNotifications()" class="w-9 h-9 rounded-full bg-slate-800 hover:bg-cyan-900 text-slate-400 hover:text-cyan-400 flex items-center justify-center transition-all border border-slate-700 relative">
+                    <i class="fas fa-bell"></i>
+                    <div id="notif-dot" class="notif-dot"></div>
+                </button>
                 <button onclick="openShareModal()" class="w-9 h-9 rounded-full bg-slate-800 hover:bg-cyan-900 text-slate-400 hover:text-cyan-400 flex items-center justify-center transition-all border border-slate-700"><i class="fas fa-share-nodes"></i></button>
                 <button onclick="openSettingsModal()" class="w-9 h-9 rounded-full bg-slate-800 hover:bg-purple-900 text-slate-400 hover:text-purple-400 flex items-center justify-center transition-all border border-slate-700"><i class="fas fa-sliders"></i></button>
             </div>
         </div>
 
-        <!-- System Status Bar -->
-        <div class="px-5 py-1.5 bg-slate-900/60 backdrop-blur-md border-b border-slate-800 flex justify-between items-center z-10 sticky top-[72px] sm:top-[76px]">
+        <!-- System Status -->
+        <div class="px-5 py-1.5 bg-slate-900/60 backdrop-blur-md border-b border-slate-800 flex justify-between items-center z-10 sticky top-[72px] sm:top-[68px]">
             <span class="text-[9px] text-slate-500 font-mono tracking-widest flex items-center gap-1">
-                <i class="fas fa-microchip"></i> SYS.VER <span class="text-cyan-500">2.7.1</span>
+                <i class="fas fa-microchip"></i> SYS.VER <span class="text-cyan-500">3.1.1</span>
             </span>
             <span id="db-status-badge" class="text-[9px] font-mono tracking-widest flex items-center gap-1.5 text-slate-500 transition-colors duration-500">
-                <span class="w-1.5 h-1.5 rounded-full bg-slate-500"></span>
-                CONNECTING...
+                <span class="w-1.5 h-1.5 rounded-full bg-slate-500"></span> CONNECTING...
             </span>
         </div>
 
-        <!-- Content -->
+        <!-- Content Area -->
         <div id="content-area" class="flex-1 overflow-y-auto pb-24 scroll-smooth relative z-10">
             
             <!-- Page: Counting -->
             <div id="page-counting" class="page-section p-5 space-y-5">
-                <!-- Forecast Card -->
-                <div class="glass-panel rounded-2xl p-6 relative overflow-hidden group">
-                    <div class="absolute inset-0 bg-gradient-to-br from-blue-600/20 to-purple-600/20 opacity-50 group-hover:opacity-70 transition duration-500"></div>
-                    <div class="absolute -right-6 -top-6 text-slate-700/20 group-hover:text-cyan-500/10 transition duration-500 transform rotate-12">
-                        <i class="fas fa-chart-line text-9xl"></i>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+                    <div class="glass-panel rounded-2xl p-6 relative overflow-hidden group">
+                        <div class="absolute inset-0 bg-gradient-to-br from-blue-600/20 to-purple-600/20 opacity-50"></div>
+                        <div class="absolute -right-6 -top-6 text-slate-700/20 rotate-12"><i class="fas fa-chart-line text-9xl"></i></div>
+                        <div class="relative z-10">
+                            <p class="text-cyan-300 text-xs font-bold tracking-widest uppercase mb-1">本月預計營收 (機台)</p>
+                            <h1 class="text-4xl font-mono font-bold text-white text-shadow-glow" id="projected-income">$0</h1>
+                        </div>
                     </div>
-                    <div class="relative z-10">
-                        <p class="text-cyan-300 text-xs font-bold tracking-widest uppercase mb-1">本月預計營收 (機台)</p>
-                        <h1 class="text-4xl font-mono font-bold text-white text-shadow-glow" id="projected-income">$0</h1>
+                    <div class="bg-slate-800 p-1 rounded-xl flex relative border border-slate-700 h-16 self-center">
+                        <div id="toggle-bg" class="absolute w-[calc(50%-4px)] h-[calc(100%-8px)] bg-slate-700 rounded-lg shadow-lg transition-all duration-300 top-1 left-1 border border-slate-600"></div>
+                        <button onclick="switchInputMode('income')" class="flex-1 py-3 text-center text-xs font-bold z-10 text-cyan-400 tracking-wider" id="btn-income">機台收入</button>
+                        <button onclick="switchInputMode('stock')" class="flex-1 py-3 text-center text-xs font-bold z-10 text-slate-400 tracking-wider" id="btn-stock">網上入貨</button>
                     </div>
                 </div>
 
-                <!-- Toggle -->
-                <div class="bg-slate-800 p-1 rounded-xl flex relative border border-slate-700">
-                    <div id="toggle-bg" class="absolute w-[calc(50%-4px)] h-[calc(100%-8px)] bg-slate-700 rounded-lg shadow-lg transition-all duration-300 top-1 left-1 border border-slate-600"></div>
-                    <button onclick="switchInputMode('income')" class="flex-1 py-3 text-center text-xs font-bold z-10 relative transition-colors duration-300 text-cyan-400 tracking-wider" id="btn-income">機台收入</button>
-                    <button onclick="switchInputMode('stock')" class="flex-1 py-3 text-center text-xs font-bold z-10 relative transition-colors duration-300 text-slate-400 tracking-wider" id="btn-stock">網上入貨</button>
-                </div>
-
-                <!-- Income Form -->
-                <div id="form-income" class="glass-panel rounded-2xl p-5 space-y-4">
-                    <div class="grid grid-cols-2 gap-4">
-                        <div class="space-y-1">
-                            <label class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">日期</label>
-                            <input type="date" id="income-date" class="w-full glass-input rounded-lg p-2.5 text-sm">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+                    <div class="input-form-container">
+                        <div id="form-income" class="glass-panel rounded-2xl p-5 space-y-4 h-full">
+                            <div class="grid grid-cols-2 gap-4">
+                                <div class="space-y-1"><label class="text-[10px] font-bold text-slate-400 uppercase">日期</label><input type="date" id="income-date" class="w-full glass-input rounded-lg p-2.5 text-sm"></div>
+                                <div class="space-y-1" id="venue-selector-container"></div>
+                            </div>
+                            <div class="space-y-2"><label class="text-[10px] font-bold text-slate-400 uppercase">機台類型</label><div class="grid grid-cols-2 gap-3"><label class="cursor-pointer"><input type="radio" name="machineType" value="standard" class="peer hidden" checked onchange="toggleMachineType()"><div class="p-3 text-center rounded-xl bg-slate-800/50 border border-slate-700 peer-checked:bg-cyan-900/30 peer-checked:border-cyan-500 peer-checked:text-cyan-400 text-xs font-bold transition-all">標準機</div></label><label class="cursor-pointer"><input type="radio" name="machineType" value="mini" class="peer hidden" onchange="toggleMachineType()"><div class="p-3 text-center rounded-xl bg-slate-800/50 border border-slate-700 peer-checked:bg-cyan-900/30 peer-checked:border-cyan-500 peer-checked:text-cyan-400 text-xs font-bold transition-all">迷你機</div></label></div></div>
+                            <div id="standard-amount-input"><div class="relative bg-slate-900/50 rounded-xl border border-slate-700 px-4 py-2 mt-2"><span class="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500">$</span><input type="number" id="income-amount" placeholder="0" class="w-full bg-transparent text-2xl font-bold text-right text-white focus:outline-none font-mono" oninput="calculateTotalIncome()"></div></div>
+                            <div id="mini-amount-input" class="hidden grid grid-cols-2 gap-4 mt-2"><div class="relative bg-slate-900/50 rounded-xl border border-slate-700 px-3 py-2"><span class="absolute left-3 top-1/2 -translate-y-1/2 text-xs text-slate-500">上</span><input type="number" id="income-top" placeholder="0" class="w-full bg-transparent text-lg font-bold text-right text-white focus:outline-none font-mono" oninput="calculateTotalIncome()"></div><div class="relative bg-slate-900/50 rounded-xl border border-slate-700 px-3 py-2"><span class="absolute left-3 top-1/2 -translate-y-1/2 text-xs text-slate-500">下</span><input type="number" id="income-bottom" placeholder="0" class="w-full bg-transparent text-lg font-bold text-right text-white focus:outline-none font-mono" oninput="calculateTotalIncome()"></div></div>
+                            <div class="flex justify-between items-center py-2 border-t border-slate-700/50 mt-2"><span class="text-slate-400 text-xs">TOTAL</span><span class="text-xl font-bold text-cyan-400 font-mono" id="income-display-total">$0</span></div>
+                            <input type="text" id="income-remarks" placeholder="備註..." class="w-full glass-input rounded-lg p-3 text-sm">
+                            <button type="button" onclick="saveRecord('income')" class="w-full bg-cyan-600 hover:bg-cyan-500 text-white font-bold py-3.5 rounded-xl shadow-glow-cyan active:scale-[0.98] transition-all flex justify-center items-center gap-2 write-action"><i class="fas fa-save"></i> 確認儲存</button>
                         </div>
-                        <div class="space-y-1" id="venue-selector-container">
-                            <!-- Custom Select Injected Here -->
-                        </div>
-                    </div>
-
-                    <div class="space-y-2">
-                        <label class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">機台類型</label>
-                        <div class="grid grid-cols-2 gap-3">
-                            <label class="cursor-pointer">
-                                <input type="radio" name="machineType" value="standard" class="peer hidden" checked onchange="toggleMachineType()">
-                                <div class="p-3 text-center rounded-xl bg-slate-800/50 border border-slate-700 peer-checked:bg-cyan-900/30 peer-checked:border-cyan-500 peer-checked:text-cyan-400 text-xs font-bold transition-all">標準機</div>
-                            </label>
-                            <label class="cursor-pointer">
-                                <input type="radio" name="machineType" value="mini" class="peer hidden" onchange="toggleMachineType()">
-                                <div class="p-3 text-center rounded-xl bg-slate-800/50 border border-slate-700 peer-checked:bg-cyan-900/30 peer-checked:border-cyan-500 peer-checked:text-cyan-400 text-xs font-bold transition-all">迷你機 (雙層)</div>
-                            </label>
-                        </div>
-                    </div>
-
-                    <div id="standard-amount-input">
-                        <div class="relative bg-slate-900/50 rounded-xl border border-slate-700 px-4 py-2 mt-2">
-                            <span class="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500">$</span>
-                            <input type="number" id="income-amount" placeholder="0" class="w-full bg-transparent text-2xl font-bold text-right text-white focus:outline-none placeholder-slate-600 font-mono" oninput="calculateTotalIncome()">
-                        </div>
-                    </div>
-
-                    <div id="mini-amount-input" class="hidden grid grid-cols-2 gap-4 mt-2">
-                        <div class="relative bg-slate-900/50 rounded-xl border border-slate-700 px-3 py-2">
-                            <span class="absolute left-3 top-1/2 -translate-y-1/2 text-xs text-slate-500">上</span>
-                            <input type="number" id="income-top" placeholder="0" class="w-full bg-transparent text-lg font-bold text-right text-white focus:outline-none font-mono" oninput="calculateTotalIncome()">
-                        </div>
-                        <div class="relative bg-slate-900/50 rounded-xl border border-slate-700 px-3 py-2">
-                            <span class="absolute left-3 top-1/2 -translate-y-1/2 text-xs text-slate-500">下</span>
-                            <input type="number" id="income-bottom" placeholder="0" class="w-full bg-transparent text-lg font-bold text-right text-white focus:outline-none font-mono" oninput="calculateTotalIncome()">
-                        </div>
-                    </div>
-
-                    <div class="flex justify-between items-center py-2 border-t border-slate-700/50 mt-2">
-                        <span class="text-slate-400 text-xs">TOTAL</span>
-                        <span class="text-xl font-bold text-cyan-400 font-mono" id="income-display-total">$0</span>
-                    </div>
-
-                    <input type="text" id="income-remarks" placeholder="備註..." class="w-full glass-input rounded-lg p-3 text-sm">
-
-                    <button type="button" onclick="saveRecord('income')" class="w-full bg-cyan-600 hover:bg-cyan-500 text-white font-bold py-3.5 rounded-xl shadow-glow-cyan active:scale-[0.98] transition-all flex justify-center items-center gap-2">
-                        <i class="fas fa-save"></i> 確認儲存
-                    </button>
-                </div>
-
-                <!-- Stock Form -->
-                <div id="form-stock" class="hidden glass-panel rounded-2xl p-5 space-y-4">
-                    <div class="grid grid-cols-2 gap-4">
-                        <div class="space-y-1">
-                            <label class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">日期</label>
-                            <input type="date" id="stock-date" class="w-full glass-input rounded-lg p-2.5 text-sm">
-                        </div>
-                        <div class="space-y-1" id="stock-source-selector-container">
-                             <!-- Custom Select Injected Here -->
+                        <div id="form-stock" class="hidden glass-panel rounded-2xl p-5 space-y-4 h-full">
+                            <div class="grid grid-cols-2 gap-4"><div class="space-y-1"><label class="text-[10px] font-bold text-slate-400 uppercase">日期</label><input type="date" id="stock-date" class="w-full glass-input rounded-lg p-2.5 text-sm"></div><div class="space-y-1" id="stock-source-selector-container"></div></div>
+                            <input type="text" id="stock-name" placeholder="貨品名稱" class="w-full glass-input rounded-lg p-3 text-sm">
+                            <div class="grid grid-cols-2 gap-4"><input type="number" id="stock-qty" placeholder="數量" class="w-full glass-input rounded-lg p-3 text-sm font-mono text-center"><input type="number" id="stock-cost" placeholder="成本 $" class="w-full glass-input rounded-lg p-3 text-sm font-mono text-center text-red-400 border-red-900/50"></div>
+                            <button type="button" onclick="saveRecord('stock')" class="w-full bg-slate-700 hover:bg-slate-600 text-white font-bold py-3.5 rounded-xl shadow-lg active:scale-[0.98] transition-all flex justify-center items-center gap-2 write-action"><i class="fas fa-box"></i> 記錄支出</button>
                         </div>
                     </div>
                     
-                    <input type="text" id="stock-name" placeholder="貨品名稱" class="w-full glass-input rounded-lg p-3 text-sm">
-
-                    <div class="grid grid-cols-2 gap-4">
-                        <input type="number" id="stock-qty" placeholder="數量" class="w-full glass-input rounded-lg p-3 text-sm font-mono text-center">
-                        <input type="number" id="stock-cost" placeholder="成本 $" class="w-full glass-input rounded-lg p-3 text-sm font-mono text-center text-red-400 border-red-900/50">
+                    <!-- Recent List -->
+                    <div class="h-full flex flex-col">
+                        <h3 class="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-3 pl-1">近期活動 (ALL)</h3>
+                        <div id="recent-records-list" class="space-y-3 pb-4 flex-1 overflow-y-auto max-h-[500px]"></div>
                     </div>
-
-                    <button type="button" onclick="saveRecord('stock')" class="w-full bg-slate-700 hover:bg-slate-600 text-white font-bold py-3.5 rounded-xl shadow-lg active:scale-[0.98] transition-all flex justify-center items-center gap-2">
-                        <i class="fas fa-box"></i> 記錄支出
-                    </button>
-                </div>
-
-                <!-- Recent List -->
-                <div>
-                    <h3 class="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-3 pl-1">近期活動 (ALL)</h3>
-                    <div id="recent-records-list" class="space-y-3 pb-4"></div>
                 </div>
             </div>
 
             <!-- Page: Data -->
             <div id="page-data" class="hidden p-5 page-section">
                 <h3 class="text-xl font-bold text-white mb-4 flex items-center gap-2"><i class="fas fa-database text-cyan-400"></i> 資料庫</h3>
-                <div id="data-tree-container" class="space-y-3 pb-20"></div>
+                <div id="data-tree-container" class="space-y-3 pb-20 md:grid md:grid-cols-2 md:gap-4 md:space-y-0"></div>
             </div>
 
             <!-- Page: Video -->
             <div id="page-video" class="hidden p-5 page-section space-y-5">
-                <div class="glass-panel rounded-2xl p-6 relative">
-                    <div class="flex justify-between items-start">
-                        <div>
-                            <h2 class="text-2xl font-bold text-white mb-1">內容創作</h2>
-                            <p class="text-purple-300 text-xs font-mono">$25.00 / Upload</p>
-                        </div>
-                        <i class="fas fa-video text-3xl text-purple-500"></i>
-                    </div>
-                    
-                    <div class="mt-6 space-y-3">
-                        <input type="text" id="video-title" placeholder="影片標題" class="w-full glass-input rounded-lg p-3 text-sm">
-                        <input type="date" id="video-date" class="w-full glass-input rounded-lg p-3 text-sm">
-                        <!-- Added type="button" to prevent form submission logic -->
-                        <button type="button" onclick="saveVideoRecord()" class="w-full bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold py-3 rounded-xl shadow-glow-purple active:scale-95 transition">
-                            <i class="fas fa-upload mr-1"></i> 新增記錄
-                        </button>
-                    </div>
-                </div>
-
-                <div>
-                    <h3 class="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-3 pl-1">本月影片</h3>
-                    <div id="video-list" class="space-y-3"></div>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-5">
+                    <div class="glass-panel rounded-2xl p-6 relative col-span-1"><div class="flex justify-between items-start"><div><h2 class="text-2xl font-bold text-white mb-1">內容創作</h2><p class="text-purple-300 text-xs font-mono">$25.00 / Upload</p></div><i class="fas fa-video text-3xl text-purple-500"></i></div><div class="mt-6 space-y-3 input-form-container"><input type="text" id="video-title" placeholder="影片標題" class="w-full glass-input rounded-lg p-3 text-sm"><input type="date" id="video-date" class="w-full glass-input rounded-lg p-3 text-sm"><button type="button" onclick="saveVideoRecord()" class="w-full bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold py-3 rounded-xl shadow-glow-purple active:scale-95 transition write-action"><i class="fas fa-upload mr-1"></i> 新增記錄</button></div></div>
+                    <div class="col-span-1 md:col-span-2"><h3 class="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-3 pl-1">本月影片</h3><div id="video-list" class="space-y-3 md:grid md:grid-cols-2 md:gap-4 md:space-y-0"></div></div>
                 </div>
             </div>
 
             <!-- Page: Check-in -->
             <div id="page-checkin" class="hidden p-5 page-section h-full flex flex-col justify-center">
-                <div class="flex-1 flex flex-col justify-center items-center">
-                    <div class="relative w-72 h-72 rounded-full border-4 border-slate-700/50 bg-slate-900/50 flex items-center justify-center mb-10 shadow-[0_0_50px_rgba(6,182,212,0.1)]">
-                        <!-- Decor rings -->
-                        <div class="absolute inset-2 rounded-full border border-cyan-500/20 border-dashed animate-spin-slow" style="animation-duration: 20s"></div>
-                        <div class="absolute inset-0 rounded-full border-t-2 border-cyan-400 opacity-20 animate-spin"></div>
-                        
-                        <div class="text-center z-10">
-                            <div id="clock-time" class="text-5xl font-mono font-bold text-white tracking-widest text-shadow-glow">00:00:00</div>
-                            <div id="clock-date" class="text-xs text-cyan-500 mt-2 font-bold tracking-[0.2em] uppercase">System Ready</div>
-                        </div>
-                    </div>
-
-                    <div class="w-full max-w-xs grid grid-cols-2 gap-4">
-                        <button type="button" onclick="clockIn()" id="btn-clock-in" class="bg-green-600 hover:bg-green-500 text-white font-bold py-4 rounded-2xl shadow-[0_0_20px_rgba(34,197,94,0.3)] active:scale-95 transition-all text-lg border border-green-500/50">
-                            <i class="fas fa-fingerprint mb-1 block text-2xl"></i> 上班
-                        </button>
-                        <button type="button" onclick="clockOut()" id="btn-clock-out" class="bg-slate-700 text-slate-500 font-bold py-4 rounded-2xl cursor-not-allowed text-lg border border-slate-600" disabled>
-                            <i class="fas fa-power-off mb-1 block text-2xl"></i> 下班
-                        </button>
-                    </div>
-                </div>
-                
-                <div class="mt-8">
-                    <h3 class="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-3 text-center">今日打卡</h3>
-                    <div id="checkin-list" class="space-y-2 max-h-40 overflow-y-auto px-2"></div>
-                </div>
+                <div class="flex-1 flex flex-col justify-center items-center"><div class="relative w-72 h-72 rounded-full border-4 border-slate-700/50 bg-slate-900/50 flex items-center justify-center mb-10 shadow-[0_0_50px_rgba(6,182,212,0.1)]"><div class="absolute inset-2 rounded-full border border-cyan-500/20 border-dashed animate-spin-slow" style="animation-duration: 20s"></div><div class="absolute inset-0 rounded-full border-t-2 border-cyan-400 opacity-20 animate-spin"></div><div class="text-center z-10"><div id="clock-time" class="text-5xl font-mono font-bold text-white tracking-widest text-shadow-glow">00:00:00</div><div id="clock-date" class="text-xs text-cyan-500 mt-2 font-bold tracking-[0.2em] uppercase">System Ready</div></div></div><div class="w-full max-w-xs grid grid-cols-2 gap-4 input-form-container"><button type="button" onclick="clockIn()" id="btn-clock-in" class="bg-green-600 hover:bg-green-500 text-white font-bold py-4 rounded-2xl shadow-[0_0_20px_rgba(34,197,94,0.3)] active:scale-95 transition-all text-lg border border-green-500/50 write-action"><i class="fas fa-fingerprint mb-1 block text-2xl"></i> 上班</button><button type="button" onclick="clockOut()" id="btn-clock-out" class="bg-slate-700 text-slate-500 font-bold py-4 rounded-2xl cursor-not-allowed text-lg border border-slate-600 write-action" disabled><i class="fas fa-power-off mb-1 block text-2xl"></i> 下班</button></div></div>
+                <div class="mt-8"><h3 class="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-3 text-center">今日打卡</h3><div id="checkin-list" class="space-y-2 max-h-40 overflow-y-auto px-2"></div></div>
             </div>
 
             <!-- Page: Settlement -->
             <div id="page-settlement" class="hidden p-5 page-section space-y-6">
-                <!-- Surplus Card (Previously Net Total) -->
-                <div class="glass-panel rounded-2xl p-6 relative cursor-pointer hover:border-cyan-500/50 transition-colors" onclick="openDrillDown('surplus')">
-                    <div class="flex justify-between items-start">
-                        <div>
-                            <p class="text-slate-400 text-[10px] font-bold uppercase tracking-widest mb-2">總盈餘 (Surplus)</p>
-                            <h1 class="text-4xl font-mono font-bold text-emerald-400 text-shadow-glow" id="settle-net-income">$0</h1>
-                            <p class="text-[9px] text-emerald-600 mt-1">營收 - 支出</p>
-                        </div>
-                        <div class="bg-emerald-500/10 p-2 rounded-lg"><i class="fas fa-coins text-emerald-400"></i></div>
-                    </div>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div class="glass-panel rounded-2xl p-6 relative cursor-pointer hover:border-cyan-500/50 transition-colors" onclick="openDrillDown('surplus')"><div class="flex justify-between items-start"><div><p class="text-slate-400 text-[10px] font-bold uppercase tracking-widest mb-2">總盈餘 (Surplus)</p><h1 class="text-4xl font-mono font-bold text-emerald-400 text-shadow-glow" id="settle-net-income">$0</h1><p class="text-[9px] text-emerald-600 mt-1">營收 - 支出</p></div><div class="bg-emerald-500/10 p-2 rounded-lg"><i class="fas fa-coins text-emerald-400"></i></div></div></div>
+                    <div class="glass-panel rounded-2xl p-6 relative cursor-pointer hover:border-blue-500/50 transition-colors" onclick="openDrillDown('gross_income')"><div class="flex justify-between items-start"><div><p class="text-slate-400 text-[10px] font-bold uppercase tracking-widest mb-2">淨總收入 (Total Gross)</p><h1 class="text-3xl font-mono font-bold text-blue-400" id="settle-total-income">$0</h1><p class="text-[9px] text-blue-600 mt-1">機台 + 影片 + 打卡</p></div><div class="bg-blue-500/10 p-2 rounded-lg"><i class="fas fa-wallet text-blue-400"></i></div></div></div>
                 </div>
-
-                <!-- Total Income (Gross) -->
-                <div class="glass-panel rounded-2xl p-6 relative cursor-pointer hover:border-blue-500/50 transition-colors" onclick="openDrillDown('gross_income')">
-                    <div class="flex justify-between items-start">
-                        <div>
-                            <p class="text-slate-400 text-[10px] font-bold uppercase tracking-widest mb-2">淨總收入 (Total Gross)</p>
-                            <h1 class="text-3xl font-mono font-bold text-blue-400" id="settle-total-income">$0</h1>
-                            <p class="text-[9px] text-blue-600 mt-1">機台 + 影片 + 打卡</p>
-                        </div>
-                        <div class="bg-blue-500/10 p-2 rounded-lg"><i class="fas fa-wallet text-blue-400"></i></div>
-                    </div>
-                </div>
-
-                <!-- Breakdown Cards -->
-                <div class="grid grid-cols-2 gap-3">
-                    <div class="glass-panel p-4 rounded-xl cursor-pointer hover:bg-slate-800/50 transition" onclick="openDrillDown('machine_income')">
-                        <p class="text-slate-500 text-[10px] uppercase">機台收入</p>
-                        <p class="text-lg font-bold text-cyan-400 font-mono mt-1" id="settle-machine-net">$0</p>
-                    </div>
-                    <div class="glass-panel p-4 rounded-xl cursor-pointer hover:bg-slate-800/50 transition" onclick="openDrillDown('video')">
-                        <p class="text-slate-500 text-[10px] uppercase">影片收入</p>
-                        <p class="text-lg font-bold text-purple-400 font-mono mt-1" id="settle-video">$0</p>
-                    </div>
-                    <div class="glass-panel p-4 rounded-xl cursor-pointer hover:bg-slate-800/50 transition" onclick="openDrillDown('wages')">
-                        <p class="text-slate-500 text-[10px] uppercase">打卡工資</p>
-                        <p class="text-lg font-bold text-green-400 font-mono mt-1" id="settle-wages">$0</p>
-                    </div>
-                    <div class="glass-panel p-4 rounded-xl cursor-pointer hover:bg-slate-800/50 transition" onclick="openDrillDown('stock')">
-                        <p class="text-slate-500 text-[10px] uppercase">入貨支出</p>
-                        <p class="text-lg font-bold text-red-400 font-mono mt-1" id="settle-stock">$0</p>
-                    </div>
-                </div>
-
-                <div class="glass-panel p-4 rounded-2xl">
-                    <div class="chart-container">
-                        <canvas id="financeChart"></canvas>
-                    </div>
-                </div>
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-3"><div class="glass-panel p-4 rounded-xl cursor-pointer hover:bg-slate-800/50 transition" onclick="openDrillDown('machine_income')"><p class="text-slate-500 text-[10px] uppercase">機台收入</p><p class="text-lg font-bold text-cyan-400 font-mono mt-1" id="settle-machine-net">$0</p></div><div class="glass-panel p-4 rounded-xl cursor-pointer hover:bg-slate-800/50 transition" onclick="openDrillDown('video')"><p class="text-slate-500 text-[10px] uppercase">影片收入</p><p class="text-lg font-bold text-purple-400 font-mono mt-1" id="settle-video">$0</p></div><div class="glass-panel p-4 rounded-xl cursor-pointer hover:bg-slate-800/50 transition" onclick="openDrillDown('wages')"><p class="text-slate-500 text-[10px] uppercase">打卡工資</p><p class="text-lg font-bold text-green-400 font-mono mt-1" id="settle-wages">$0</p></div><div class="glass-panel p-4 rounded-xl cursor-pointer hover:bg-slate-800/50 transition" onclick="openDrillDown('stock')"><p class="text-slate-500 text-[10px] uppercase">入貨支出</p><p class="text-lg font-bold text-red-400 font-mono mt-1" id="settle-stock">$0</p></div></div>
+                <div class="glass-panel p-4 rounded-2xl h-80"><div class="chart-container h-full"><canvas id="financeChart"></canvas></div></div>
             </div>
-
         </div>
 
-        <!-- Navigation (Fixed to bottom safe area) -->
-        <div class="px-2 py-2 flex justify-around items-center z-40 bg-slate-900/90 backdrop-blur-md border-t border-slate-800 safe-area-pb absolute bottom-0 w-full">
-            <button onclick="navTo('counting')" class="nav-item active w-full py-3 flex flex-col items-center group" data-target="counting">
-                <i class="fas fa-calculator text-lg mb-1 transition-transform group-hover:scale-110"></i>
-                <span class="text-[9px] font-bold tracking-widest uppercase">記數</span>
-            </button>
-            <button onclick="navTo('data')" class="nav-item text-slate-500 w-full py-3 flex flex-col items-center group hover:text-slate-300" data-target="data">
-                <i class="fas fa-database text-lg mb-1 transition-transform group-hover:scale-110"></i>
-                <span class="text-[9px] font-bold tracking-widest uppercase">資料</span>
-            </button>
-            <button onclick="navTo('video')" class="nav-item text-slate-500 w-full py-3 flex flex-col items-center group hover:text-slate-300" data-target="video">
-                <i class="fas fa-film text-lg mb-1 transition-transform group-hover:scale-110"></i>
-                <span class="text-[9px] font-bold tracking-widest uppercase">影片</span>
-            </button>
-            <button onclick="navTo('checkin')" class="nav-item text-slate-500 w-full py-3 flex flex-col items-center group hover:text-slate-300" data-target="checkin">
-                <i class="fas fa-user-clock text-lg mb-1 transition-transform group-hover:scale-110"></i>
-                <span class="text-[9px] font-bold tracking-widest uppercase">打卡</span>
-            </button>
-            <button onclick="navTo('settlement')" class="nav-item text-slate-500 w-full py-3 flex flex-col items-center group hover:text-slate-300" data-target="settlement">
-                <i class="fas fa-chart-pie text-lg mb-1 transition-transform group-hover:scale-110"></i>
-                <span class="text-[9px] font-bold tracking-widest uppercase">結算</span>
-            </button>
-        </div>
-
-    </div>
-
-    <!-- Edit Modal -->
-    <div id="modal-edit" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-        <div class="w-full max-w-sm glass-panel p-6 rounded-2xl border border-slate-700 shadow-2xl">
-            <h3 class="text-lg font-bold text-white mb-4 flex items-center gap-2">
-                <i class="fas fa-edit text-cyan-400"></i> 編輯記錄
-            </h3>
-            <div id="edit-form-container" class="space-y-4 mb-6"></div>
-            <div class="flex gap-3">
-                <button type="button" onclick="closeModal('modal-edit')" class="flex-1 bg-slate-700 text-slate-300 py-3 rounded-xl font-bold text-sm">取消</button>
-                <button type="button" onclick="deleteCurrentRecord()" class="flex-1 bg-red-900/50 text-red-400 border border-red-900 hover:bg-red-900/80 py-3 rounded-xl font-bold text-sm">刪除</button>
-                <button type="button" onclick="updateCurrentRecord()" class="flex-1 bg-cyan-600 text-white hover:bg-cyan-500 py-3 rounded-xl font-bold text-sm">儲存</button>
-            </div>
+        <!-- Navigation (Fixed Bottom) -->
+        <div class="px-2 py-2 flex justify-around items-center z-40 bg-slate-900/90 backdrop-blur-md border-t border-slate-800 safe-area-pb absolute bottom-0 w-full rounded-b-2xl">
+            <button onclick="navTo('counting')" class="nav-item active w-full py-3 flex flex-col items-center group" data-target="counting"><i class="fas fa-calculator text-lg mb-1 transition-transform group-hover:scale-110"></i><span class="text-[9px] font-bold tracking-widest uppercase">記數</span></button>
+            <button onclick="navTo('data')" class="nav-item text-slate-500 w-full py-3 flex flex-col items-center group hover:text-slate-300" data-target="data"><i class="fas fa-database text-lg mb-1 transition-transform group-hover:scale-110"></i><span class="text-[9px] font-bold tracking-widest uppercase">資料</span></button>
+            <button onclick="navTo('video')" class="nav-item text-slate-500 w-full py-3 flex flex-col items-center group hover:text-slate-300" data-target="video"><i class="fas fa-film text-lg mb-1 transition-transform group-hover:scale-110"></i><span class="text-[9px] font-bold tracking-widest uppercase">影片</span></button>
+            <button onclick="navTo('checkin')" class="nav-item text-slate-500 w-full py-3 flex flex-col items-center group hover:text-slate-300" data-target="checkin"><i class="fas fa-user-clock text-lg mb-1 transition-transform group-hover:scale-110"></i><span class="text-[9px] font-bold tracking-widest uppercase">打卡</span></button>
+            <button onclick="navTo('settlement')" class="nav-item text-slate-500 w-full py-3 flex flex-col items-center group hover:text-slate-300" data-target="settlement"><i class="fas fa-chart-pie text-lg mb-1 transition-transform group-hover:scale-110"></i><span class="text-[9px] font-bold tracking-widest uppercase">結算</span></button>
         </div>
     </div>
 
-    <!-- Drill Down Modal -->
-    <div id="modal-drilldown" class="hidden fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/60 backdrop-blur-sm">
-        <div class="w-full max-w-md h-[80vh] bg-slate-900 rounded-t-2xl sm:rounded-2xl p-6 border-t border-slate-700 flex flex-col">
-            <div class="flex justify-between items-center mb-4">
-                <h3 class="text-lg font-bold text-white" id="drilldown-title">詳細記錄</h3>
-                <button onclick="closeModal('modal-drilldown')" class="w-8 h-8 rounded-full bg-slate-800 text-slate-400 flex items-center justify-center"><i class="fas fa-times"></i></button>
-            </div>
-            <div id="drilldown-list" class="flex-1 overflow-y-auto space-y-2 pr-1"></div>
-        </div>
-    </div>
-
-    <!-- Settings Modal -->
-    <div id="modal-settings" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-        <div class="w-full max-w-md glass-panel p-6 rounded-2xl border border-slate-700">
-            <h3 class="text-lg font-bold text-white mb-6">系統設定</h3>
-            
-            <label class="text-[10px] font-bold text-slate-500 uppercase block mb-2">顯示暱稱</label>
-            <input type="text" id="settings-nickname" class="w-full glass-input rounded-xl p-3 mb-6 text-sm">
-
-            <!-- Venues Input -->
-            <label class="text-[10px] font-bold text-slate-500 uppercase block mb-2">自定義場地</label>
-            <div class="flex gap-2 mb-3">
-                <input type="text" id="new-venue-input" class="flex-1 glass-input rounded-xl p-3 text-sm" placeholder="輸入場地名稱..." onkeypress="if(event.key==='Enter') addSettingItem('venues')">
-                <button type="button" onclick="addSettingItem('venues')" class="bg-slate-700 hover:bg-cyan-600 text-white w-12 rounded-xl transition flex items-center justify-center"><i class="fas fa-plus"></i></button>
-            </div>
-            <div id="venues-list" class="flex flex-wrap gap-2 mb-6 min-h-[30px]"></div>
-
-            <!-- Sources Input -->
-            <label class="text-[10px] font-bold text-slate-500 uppercase block mb-2">自定義入貨來源</label>
-            <div class="flex gap-2 mb-3">
-                <input type="text" id="new-source-input" class="flex-1 glass-input rounded-xl p-3 text-sm" placeholder="輸入來源名稱..." onkeypress="if(event.key==='Enter') addSettingItem('sources')">
-                <button type="button" onclick="addSettingItem('sources')" class="bg-slate-700 hover:bg-cyan-600 text-white w-12 rounded-xl transition flex items-center justify-center"><i class="fas fa-plus"></i></button>
-            </div>
-            <div id="sources-list" class="flex flex-wrap gap-2 mb-6 min-h-[30px]"></div>
-
-            <button type="button" onclick="saveSettings()" class="w-full bg-cyan-600 text-white font-bold py-3 rounded-xl mb-3 shadow-glow-cyan hover:bg-cyan-500 transition">儲存變更</button>
-            <button type="button" onclick="handleLogout()" class="w-full border border-red-500/30 text-red-400 font-bold py-3 rounded-xl hover:bg-red-900/20 transition mb-3">登出帳戶</button>
-            <button type="button" onclick="closeModal('modal-settings')" class="w-full text-slate-500 text-sm hover:text-white transition">取消</button>
-        </div>
-    </div>
-
-    <!-- Share Modal -->
-    <div id="modal-share" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-        <div class="w-full max-w-md glass-panel p-6 rounded-2xl border border-slate-700">
-            <h3 class="text-lg font-bold text-white mb-4">資料分享</h3>
-            <p class="text-xs text-slate-400 mb-5">輸入對方 Email 邀請查看您的資料。請選擇允許對方查看的權限：</p>
-            
-            <input type="email" id="share-email" placeholder="對方 Email" class="w-full glass-input rounded-xl p-3 mb-5 text-sm">
-            
-            <div class="space-y-4 mb-8">
-                <!-- Toggle Item 1 -->
-                <div class="flex items-center justify-between p-3 bg-slate-800/50 rounded-xl border border-slate-700">
-                    <span class="text-sm font-bold text-slate-300">允許查看記帳明細</span>
-                    <label class="relative inline-flex items-center cursor-pointer">
-                        <input type="checkbox" id="share-toggle-records" class="sr-only peer toggle-checkbox" checked>
-                        <div class="w-11 h-6 bg-slate-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-cyan-600 toggle-label"></div>
-                    </label>
-                </div>
-                
-                <!-- Toggle Item 2 -->
-                <div class="flex items-center justify-between p-3 bg-slate-800/50 rounded-xl border border-slate-700">
-                    <span class="text-sm font-bold text-slate-300">允許查看影片列表</span>
-                    <label class="relative inline-flex items-center cursor-pointer">
-                        <input type="checkbox" id="share-toggle-videos" class="sr-only peer toggle-checkbox" checked>
-                        <div class="w-11 h-6 bg-slate-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-cyan-600 toggle-label"></div>
-                    </label>
-                </div>
-
-                <!-- Toggle Item 3 -->
-                <div class="flex items-center justify-between p-3 bg-slate-800/50 rounded-xl border border-slate-700">
-                    <span class="text-sm font-bold text-slate-300">允許查看打卡記錄</span>
-                    <label class="relative inline-flex items-center cursor-pointer">
-                        <input type="checkbox" id="share-toggle-checkin" class="sr-only peer toggle-checkbox" checked>
-                        <div class="w-11 h-6 bg-slate-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-cyan-600 toggle-label"></div>
-                    </label>
-                </div>
-
-                <!-- Toggle Item 4 -->
-                <div class="flex items-center justify-between p-3 bg-slate-800/50 rounded-xl border border-slate-700">
-                    <span class="text-sm font-bold text-slate-300">允許查看結算報表</span>
-                    <label class="relative inline-flex items-center cursor-pointer">
-                        <input type="checkbox" id="share-toggle-settlement" class="sr-only peer toggle-checkbox" checked>
-                        <div class="w-11 h-6 bg-slate-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-cyan-600 toggle-label"></div>
-                    </label>
-                </div>
-            </div>
-
-            <button type="button" onclick="saveSharingSettings()" class="w-full bg-cyan-600 text-white font-bold py-3 rounded-xl shadow-glow-cyan active:scale-95 transition">更新權限 / 發送邀請</button>
-            <button type="button" onclick="closeModal('modal-share')" class="w-full text-slate-500 text-sm mt-3 hover:text-white">取消</button>
-        </div>
-    </div>
-
-    <!-- Toast -->
-    <div id="toast" class="fixed top-6 left-1/2 transform -translate-x-1/2 bg-slate-800 text-white px-6 py-3 rounded-full shadow-2xl z-[70] opacity-0 pointer-events-none transition-all duration-300 text-sm font-bold flex items-center gap-2 border border-cyan-500/30">
-        <i class="fas fa-check-circle text-cyan-400"></i>
-        <span id="toast-msg">操作成功</span>
-    </div>
+    <!-- Modals -->
+    <div id="modal-edit" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm"><div class="w-full max-w-sm glass-panel p-6 rounded-2xl border border-slate-700 shadow-2xl"><h3 class="text-lg font-bold text-white mb-4 flex items-center gap-2"><i class="fas fa-edit text-cyan-400"></i> 編輯記錄</h3><div id="edit-form-container" class="space-y-4 mb-6"></div><div class="flex gap-3"><button type="button" onclick="closeModal('modal-edit')" class="flex-1 bg-slate-700 text-slate-300 py-3 rounded-xl font-bold text-sm">取消</button><button type="button" onclick="deleteCurrentRecord()" class="flex-1 bg-red-900/50 text-red-400 border border-red-900 hover:bg-red-900/80 py-3 rounded-xl font-bold text-sm">刪除</button><button type="button" onclick="updateCurrentRecord()" class="flex-1 bg-cyan-600 text-white hover:bg-cyan-500 py-3 rounded-xl font-bold text-sm">儲存</button></div></div></div>
+    <div id="modal-drilldown" class="hidden fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/60 backdrop-blur-sm"><div class="w-full max-w-md h-[80vh] bg-slate-900 rounded-t-2xl sm:rounded-2xl p-6 border-t border-slate-700 flex flex-col"><div class="flex justify-between items-center mb-4"><h3 class="text-lg font-bold text-white" id="drilldown-title">詳細記錄</h3><button onclick="closeModal('modal-drilldown')" class="w-8 h-8 rounded-full bg-slate-800 text-slate-400 flex items-center justify-center"><i class="fas fa-times"></i></button></div><div id="drilldown-list" class="flex-1 overflow-y-auto space-y-2 pr-1"></div></div></div>
+    <div id="modal-settings" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm"><div class="w-full max-w-md glass-panel p-6 rounded-2xl border border-slate-700"><h3 class="text-lg font-bold text-white mb-6">系統設定</h3><label class="text-[10px] font-bold text-slate-500 uppercase block mb-2">顯示暱稱</label><input type="text" id="settings-nickname" class="w-full glass-input rounded-xl p-3 mb-6 text-sm"><label class="text-[10px] font-bold text-slate-500 uppercase block mb-2">自定義場地</label><div class="flex gap-2 mb-3"><input type="text" id="new-venue-input" class="flex-1 glass-input rounded-xl p-3 text-sm" placeholder="輸入場地名稱..." onkeypress="if(event.key==='Enter') addSettingItem('venues')"><button type="button" onclick="addSettingItem('venues')" class="bg-slate-700 hover:bg-cyan-600 text-white w-12 rounded-xl transition flex items-center justify-center"><i class="fas fa-plus"></i></button></div><div id="venues-list" class="flex flex-wrap gap-2 mb-6 min-h-[30px]"></div><label class="text-[10px] font-bold text-slate-500 uppercase block mb-2">自定義入貨來源</label><div class="flex gap-2 mb-3"><input type="text" id="new-source-input" class="flex-1 glass-input rounded-xl p-3 text-sm" placeholder="輸入來源名稱..." onkeypress="if(event.key==='Enter') addSettingItem('sources')"><button type="button" onclick="addSettingItem('sources')" class="bg-slate-700 hover:bg-cyan-600 text-white w-12 rounded-xl transition flex items-center justify-center"><i class="fas fa-plus"></i></button></div><div id="sources-list" class="flex flex-wrap gap-2 mb-6 min-h-[30px]"></div><button type="button" onclick="saveSettings()" class="w-full bg-cyan-600 text-white font-bold py-3 rounded-xl mb-3 shadow-glow-cyan hover:bg-cyan-500 transition">儲存變更</button><button type="button" onclick="handleLogout()" class="w-full border border-red-500/30 text-red-400 font-bold py-3 rounded-xl hover:bg-red-900/20 transition mb-3">登出帳戶</button><button type="button" onclick="closeModal('modal-settings')" class="w-full text-slate-500 text-sm hover:text-white transition">取消</button></div></div>
+    <div id="modal-notif" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm"><div class="w-full max-w-md glass-panel p-6 rounded-2xl border border-slate-700"><div class="flex justify-between items-center mb-4"><h3 class="text-lg font-bold text-white"><i class="fas fa-bell text-cyan-400 mr-2"></i>通知中心</h3><button onclick="closeModal('modal-notif')" class="text-slate-400 hover:text-white"><i class="fas fa-times"></i></button></div><div id="notif-list" class="space-y-3 max-h-60 overflow-y-auto mb-4"></div><div id="shared-view-selector" class="border-t border-slate-700 pt-4 hidden"><p class="text-xs text-slate-400 mb-2 font-bold uppercase">切換檢視模式</p><div class="grid grid-cols-1 gap-2" id="shared-users-list"></div><button onclick="switchToMyData()" class="w-full mt-2 bg-slate-700 text-white py-2 rounded-lg text-sm hover:bg-slate-600">返回我的資料</button></div></div></div>
+    <div id="modal-share" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm"><div class="w-full max-w-md glass-panel p-6 rounded-2xl border border-slate-700"><h3 class="text-lg font-bold text-white mb-4">資料分享管理</h3><div class="flex gap-2 mb-6"><input type="email" id="share-email" placeholder="對方 Email" class="flex-1 glass-input rounded-xl p-3 text-sm"><button onclick="sendInvite()" class="bg-cyan-600 hover:bg-cyan-500 text-white px-4 rounded-xl font-bold shadow-lg"><i class="fas fa-paper-plane"></i></button></div><h4 class="text-[10px] font-bold text-slate-500 uppercase mb-3">已發出的邀請</h4><div id="sent-invites-list" class="space-y-2 max-h-40 overflow-y-auto mb-6"></div><div class="space-y-4 mb-8"><div class="flex items-center justify-between p-3 bg-slate-800/50 rounded-xl border border-slate-700"><span class="text-sm font-bold text-slate-300">允許查看記帳明細</span><label class="relative inline-flex items-center cursor-pointer"><input type="checkbox" id="share-toggle-records" class="sr-only peer toggle-checkbox" checked><div class="w-11 h-6 bg-slate-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-cyan-600 toggle-label"></div></label></div><div class="flex items-center justify-between p-3 bg-slate-800/50 rounded-xl border border-slate-700"><span class="text-sm font-bold text-slate-300">允許查看影片列表</span><label class="relative inline-flex items-center cursor-pointer"><input type="checkbox" id="share-toggle-videos" class="sr-only peer toggle-checkbox" checked><div class="w-11 h-6 bg-slate-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-cyan-600 toggle-label"></div></label></div><div class="flex items-center justify-between p-3 bg-slate-800/50 rounded-xl border border-slate-700"><span class="text-sm font-bold text-slate-300">允許查看打卡記錄</span><label class="relative inline-flex items-center cursor-pointer"><input type="checkbox" id="share-toggle-checkin" class="sr-only peer toggle-checkbox" checked><div class="w-11 h-6 bg-slate-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-cyan-600 toggle-label"></div></label></div><div class="flex items-center justify-between p-3 bg-slate-800/50 rounded-xl border border-slate-700"><span class="text-sm font-bold text-slate-300">允許查看結算報表</span><label class="relative inline-flex items-center cursor-pointer"><input type="checkbox" id="share-toggle-settlement" class="sr-only peer toggle-checkbox" checked><div class="w-11 h-6 bg-slate-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-cyan-600 toggle-label"></div></label></div></div><button type="button" onclick="saveSharingSettings()" class="w-full bg-cyan-600 text-white font-bold py-3 rounded-xl shadow-glow-cyan active:scale-95 transition">儲存全域權限</button><button type="button" onclick="closeModal('modal-share')" class="w-full text-slate-500 text-sm mt-3 hover:text-white pb-2">關閉</button></div></div>
+    <div id="toast" class="fixed top-6 left-1/2 transform -translate-x-1/2 bg-slate-800 text-white px-6 py-3 rounded-full shadow-2xl z-[70] opacity-0 pointer-events-none transition-all duration-300 text-sm font-bold flex items-center gap-2 border border-cyan-500/30"><i class="fas fa-check-circle text-cyan-400"></i><span id="toast-msg">操作成功</span></div>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-app.js";
@@ -611,137 +355,127 @@
         const auth = getAuth(app);
         const db = getFirestore(app);
         
-        let currentUser = null;
-        let isGuest = false;
-        let recordsData = [];
-        let videoData = [];
-        let timesheetData = [];
+        let currentUser = null, isGuest = false;
+        let recordsData = [], videoData = [], timesheetData = [], sentInvitations = [], receivedInvitations = [];
         let financeChart = null;
         let settings = { nickname: '', venues: ['旺角中心', '現時點', '信和中心'], sources: ['淘寶', '本地批發', '日本代購'] };
         let sharingSettings = { records: true, videos: true, checkin: true, settlement: true }; 
-        let editingSettings = null;
-        let activeEdit = null;
-        let workStart = null;
+        let editingSettings = null, activeEdit = null, workStart = null;
+        let currentViewMode = 'mine', sharedTargetUid = null, activeInvitationId = null, unsubscribeSharedMonitor = null, unsubscribes = [];
 
-        // --- Auth & View Logic ---
-        window.toggleAuthView = (view) => {
-            const loginView = document.getElementById('auth-view-login');
-            const regView = document.getElementById('auth-view-register');
-            if(view === 'register') {
-                loginView.classList.add('hidden');
-                regView.classList.remove('hidden');
-            } else {
-                regView.classList.add('hidden');
-                loginView.classList.remove('hidden');
-            }
-        };
-
-        window.handleGoogleLogin = async () => {
-            try { await signInWithPopup(auth, new GoogleAuthProvider()); } 
-            catch (e) { showToast("登入失敗: " + e.message); }
-        };
-        window.handleEmailLogin = async () => {
-            const e = document.getElementById('login-email').value;
-            const p = document.getElementById('login-pass').value;
-            if(!e||!p) return showToast("請輸入電郵及密碼");
-            try { await signInWithEmailAndPassword(auth, e, p); } catch(err){ showToast(err.message); }
-        };
-        window.handleEmailRegister = async () => {
-            const e = document.getElementById('reg-email').value;
-            const p = document.getElementById('reg-pass').value;
-            if(!e||!p) return showToast("請輸入電郵及密碼");
-            try { await createUserWithEmailAndPassword(auth, e, p); showToast("註冊成功"); } catch(err){ showToast(err.message); }
-        };
-        window.handleGuestLogin = async () => {
-            isGuest = true;
-            document.getElementById('auth-screen').classList.add('hidden');
-            document.getElementById('app-container').classList.remove('hidden');
-            currentUser = { uid: 'guest', displayName: 'Guest User', email: 'guest@local', photoURL: null };
-            updateUIForUser();
-            loadGuestData();
-        };
-        window.handleLogout = async () => {
-            if(!isGuest) await signOut(auth);
-            location.reload();
-        };
+        window.toggleAuthView=(v)=>{document.getElementById(v==='register'?'auth-view-login':'auth-view-register').classList.add('hidden');document.getElementById(v==='register'?'auth-view-register':'auth-view-login').classList.remove('hidden');};
+        window.handleGoogleLogin=async()=>{try{await signInWithPopup(auth,new GoogleAuthProvider());}catch(e){showToast("登入失敗: "+e.message);}};
+        window.handleEmailLogin=async()=>{try{await signInWithEmailAndPassword(auth,document.getElementById('login-email').value,document.getElementById('login-pass').value);}catch(e){showToast(e.message);}};
+        window.handleEmailRegister=async()=>{try{await createUserWithEmailAndPassword(auth,document.getElementById('reg-email').value,document.getElementById('reg-pass').value);showToast("註冊成功");}catch(e){showToast(e.message);}};
+        window.handleGuestLogin=()=>{isGuest=true;document.getElementById('auth-screen').classList.add('hidden');document.getElementById('app-container').classList.remove('hidden');currentUser={uid:'guest',displayName:'Guest',email:'guest@local'};updateUIForUser();loadGuestData();};
+        window.handleLogout=async()=>{if(!isGuest)await signOut(auth);location.reload();};
 
         onAuthStateChanged(auth, (user) => {
             if (user) {
-                currentUser = user;
-                isGuest = false;
+                currentUser = user; isGuest = false;
                 document.getElementById('auth-screen').classList.add('hidden');
                 document.getElementById('app-container').classList.remove('hidden');
-                updateUIForUser();
-                initRealtimeListeners();
+                updateUIForUser(); initRealtimeListeners(); initInvitationListeners();
             }
         });
 
         function updateUIForUser() {
             document.getElementById('display-username').innerText = currentUser.displayName || settings.nickname || "使用者";
             document.getElementById('display-email').innerText = currentUser.email;
-            
-            const badge = document.getElementById('db-status-badge');
-            if(isGuest) {
-                badge.innerHTML = `<span class="w-1.5 h-1.5 rounded-full bg-yellow-500"></span> LOCAL ONLY`;
-                badge.classList.remove('text-emerald-500');
-                badge.classList.add('text-yellow-500');
-            } else {
-                badge.innerHTML = `<span class="w-1.5 h-1.5 rounded-full bg-emerald-500 shadow-[0_0_5px_rgba(16,185,129,0.8)] animate-pulse"></span> DB ONLINE`;
-                badge.classList.remove('text-yellow-500');
-                badge.classList.add('text-emerald-500');
-            }
-
-            const avatarImg = document.getElementById('user-avatar-img');
-            const avatarPlaceholder = document.getElementById('user-avatar-placeholder');
-            if(currentUser.photoURL) {
-                avatarImg.src = currentUser.photoURL;
-                avatarImg.classList.remove('hidden');
-                avatarPlaceholder.classList.add('hidden');
-            } else {
-                avatarImg.classList.add('hidden');
-                avatarPlaceholder.classList.remove('hidden');
-                avatarPlaceholder.innerText = (currentUser.displayName || "U")[0].toUpperCase();
-            }
+            if(!isGuest) document.getElementById('db-status-badge').innerHTML = `<span class="w-1.5 h-1.5 rounded-full bg-emerald-500 shadow-glow-green animate-pulse"></span> DB ONLINE`;
+            else document.getElementById('db-status-badge').innerHTML = `<span class="w-1.5 h-1.5 rounded-full bg-yellow-500"></span> LOCAL ONLY`;
         }
 
-        function getPath(col) { return `artifacts/${firebaseConfig.appId}/users/${currentUser.uid}/${col}`; }
+        function getPath(col) { 
+            const targetUid = (currentViewMode === 'shared' && sharedTargetUid) ? sharedTargetUid : currentUser.uid;
+            return `artifacts/${firebaseConfig.appId}/users/${targetUid}/${col}`; 
+        }
 
-        async function initRealtimeListeners() {
+        function initRealtimeListeners() {
             if(isGuest) return;
-            // Listen for System Status (Work State)
-            onSnapshot(doc(db, getPath('system'), 'status'), (snap) => {
-                if(snap.exists()) {
-                    const data = snap.data();
-                    if(data.activeSessionStart) restoreSession(data.activeSessionStart);
-                    else resetClockUI();
-                } else resetClockUI();
-            });
+            unsubscribes.forEach(u => u()); unsubscribes = [];
+            if(currentViewMode === 'mine') {
+                unsubscribes.push(onSnapshot(doc(db, getPath('settings'), 'config'), (s) => { if(s.exists()) { const d=s.data(); if(d.nickname) settings.nickname=d.nickname; if(d.venues) settings.venues=d.venues; if(d.sources) settings.sources=d.sources; updateUIForUser(); renderCustomSelectors(); }}));
+                unsubscribes.push(onSnapshot(doc(db, getPath('settings'), 'sharing'), (s) => { if(s.exists()) sharingSettings=s.data(); }));
+                unsubscribes.push(onSnapshot(doc(db, getPath('system'), 'status'), (s) => { if(s.exists() && s.data().activeSessionStart) restoreSession(s.data().activeSessionStart); else resetClockUI(); }));
+            }
+            const onError = (err) => { console.error(err); if(err.code === 'permission-denied' && currentViewMode === 'shared') exitSharedMode("權限已被撤銷或資料庫規則未更新"); };
+            unsubscribes.push(onSnapshot(query(collection(db, getPath('records')), orderBy('date', 'desc')), (s) => { recordsData = s.docs.map(d=>({id:d.id,...d.data()})); renderAll(); }, onError));
+            unsubscribes.push(onSnapshot(query(collection(db, getPath('videos')), orderBy('date', 'desc')), (s) => { videoData = s.docs.map(d=>({id:d.id,...d.data()})); renderAll(); }, onError));
+            unsubscribes.push(onSnapshot(query(collection(db, getPath('timesheets')), orderBy('createdAt', 'desc')), (s) => { timesheetData = s.docs.map(d=>({id:d.id,...d.data()})); renderAll(); }, onError));
+        }
 
-            onSnapshot(doc(db, getPath('settings'), 'config'), (snap) => {
-                if(snap.exists()) {
-                    const d = snap.data();
-                    if(d.nickname) settings.nickname = d.nickname;
-                    if(d.venues) settings.venues = d.venues;
-                    if(d.sources) settings.sources = d.sources;
-                    updateUIForUser();
+        function initInvitationListeners() {
+            if(isGuest) return;
+            onSnapshot(query(collection(db, `artifacts/${firebaseConfig.appId}/public/invitations`), where('fromUid', '==', currentUser.uid)), (snap) => {
+                sentInvitations = snap.docs.map(d => ({id:d.id, ...d.data()}));
+                renderSentInvites();
+            });
+            onSnapshot(query(collection(db, `artifacts/${firebaseConfig.appId}/public/invitations`), where('toEmail', '==', currentUser.email)), (snap) => {
+                receivedInvitations = snap.docs.map(d => ({id:d.id, ...d.data()}));
+                updateNotifDot();
+                renderReceivedInvites();
+            });
+        }
+
+        window.sendInvite = async () => {
+            const email = document.getElementById('share-email').value;
+            if(!email) return showToast("請輸入 Email");
+            try {
+                if(!sharingSettings) sharingSettings = { records: true, videos: true, checkin: true, settlement: true };
+                await addDoc(collection(db, `artifacts/${firebaseConfig.appId}/public/invitations`), {
+                    fromUid: currentUser.uid, fromName: settings.nickname || currentUser.email, toEmail: email, status: 'pending', permissions: sharingSettings, createdAt: new Date().toISOString()
+                });
+                showToast("邀請已發送"); document.getElementById('share-email').value = '';
+            } catch(e) { showToast("發送失敗: " + e.message); }
+        };
+        window.acceptInvite = async (id) => { await updateDoc(doc(db, `artifacts/${firebaseConfig.appId}/public/invitations`, id), { status: 'accepted' }); showToast("已接受"); };
+        window.rejectInvite = async (id) => { await deleteDoc(doc(db, `artifacts/${firebaseConfig.appId}/public/invitations`, id)); showToast("已刪除"); };
+        
+        window.switchToSharedView = (targetUid, targetName, inviteId) => {
+            if(unsubscribeSharedMonitor) unsubscribeSharedMonitor();
+            unsubscribeSharedMonitor = onSnapshot(doc(db, `artifacts/${firebaseConfig.appId}/public/invitations`, inviteId), (snap) => {
+                if(!snap.exists() || snap.data().status !== 'accepted') exitSharedMode("權限已變更或移除");
+            });
+            currentViewMode = 'shared'; sharedTargetUid = targetUid; activeInvitationId = inviteId;
+            document.getElementById('shared-mode-banner').classList.remove('hidden');
+            document.getElementById('display-username').innerText = `${targetName} 的資料`;
+            document.getElementById('main-header').classList.add('border-indigo-500');
+            document.querySelectorAll('.write-action').forEach(el => el.classList.add('hidden'));
+            closeModal('modal-notif');
+            initRealtimeListeners();
+            showToast(`已切換至 ${targetName}`);
+        };
+        window.switchToMyData = () => {
+            if(unsubscribeSharedMonitor) unsubscribeSharedMonitor();
+            currentViewMode = 'mine'; sharedTargetUid = null; activeInvitationId = null;
+            document.getElementById('shared-mode-banner').classList.add('hidden');
+            updateUIForUser();
+            document.getElementById('main-header').classList.remove('border-indigo-500');
+            document.querySelectorAll('.write-action').forEach(el => el.classList.remove('hidden'));
+            closeModal('modal-notif');
+            initRealtimeListeners();
+            showToast("已返回我的資料");
+        };
+        window.exitSharedMode = (reason) => { if(currentViewMode === 'mine') return; alert(reason || "已退出"); switchToMyData(); };
+
+        function updateNotifDot() { const hasPending = receivedInvitations.some(i => i.status === 'pending'); document.getElementById('notif-dot').classList.toggle('active', hasPending); }
+        function renderReceivedInvites() {
+            const list = document.getElementById('notif-list'); const userList = document.getElementById('shared-users-list');
+            list.innerHTML = ''; userList.innerHTML = ''; let hasAccepted = false;
+            receivedInvitations.forEach(inv => {
+                if(inv.status === 'pending') {
+                    list.innerHTML += `<div class="p-3 bg-slate-800/80 rounded-lg border border-slate-700 mb-2"><div class="flex justify-between items-center mb-2"><span class="text-sm text-white font-bold">${inv.fromName}</span><span class="text-[10px] bg-cyan-900 text-cyan-400 px-1.5 py-0.5 rounded">邀請</span></div><p class="text-xs text-slate-400 mb-3">邀請您查看營收資料。</p><div class="flex gap-2"><button onclick="acceptInvite('${inv.id}')" class="flex-1 bg-green-600 text-white text-xs py-1.5 rounded">接受</button><button onclick="rejectInvite('${inv.id}')" class="flex-1 bg-slate-700 text-slate-300 text-xs py-1.5 rounded">拒絕</button></div></div>`;
+                } else if (inv.status === 'accepted') {
+                    hasAccepted = true;
+                    userList.innerHTML += `<button onclick="switchToSharedView('${inv.fromUid}', '${inv.fromName}', '${inv.id}')" class="w-full text-left p-3 bg-slate-800/50 hover:bg-indigo-900/30 rounded-lg border border-slate-700 hover:border-indigo-500 transition flex items-center justify-between group"><span class="text-sm text-slate-300 group-hover:text-white">${inv.fromName}</span><i class="fas fa-arrow-right text-slate-500 group-hover:text-indigo-400"></i></button>`;
                 }
-                renderCustomSelectors();
             });
-            onSnapshot(doc(db, getPath('settings'), 'sharing'), (snap) => {
-                if(snap.exists()) sharingSettings = snap.data();
-            });
-            onSnapshot(query(collection(db, getPath('records')), orderBy('date', 'desc')), (snap) => {
-                recordsData = snap.docs.map(d => ({id: d.id, ...d.data()}));
-                renderAll();
-            });
-            onSnapshot(query(collection(db, getPath('videos')), orderBy('date', 'desc')), (snap) => {
-                videoData = snap.docs.map(d => ({id: d.id, ...d.data()}));
-                renderAll();
-            });
-            onSnapshot(query(collection(db, getPath('timesheets')), orderBy('createdAt', 'desc')), (snap) => {
-                timesheetData = snap.docs.map(d => ({id: d.id, ...d.data()}));
-                renderAll();
-            });
+            if(!receivedInvitations.length) list.innerHTML = '<div class="text-center text-slate-500 text-xs py-2">暫無通知</div>';
+            document.getElementById('shared-view-selector').classList.toggle('hidden', !hasAccepted);
+        }
+        function renderSentInvites() {
+            document.getElementById('sent-invites-list').innerHTML = sentInvitations.map(inv => `<div class="flex justify-between items-center p-2 bg-slate-800/50 rounded-lg border border-slate-700"><div><div class="text-xs text-white">${inv.toEmail}</div><div class="text-[10px] ${inv.status==='accepted'?'text-green-400':'text-yellow-400'}">${inv.status==='accepted'?'已接受':'等待中'}</div></div><button onclick="rejectInvite('${inv.id}')" class="text-red-400 hover:text-red-300 text-xs border border-red-900/50 px-2 py-1 rounded">撤銷</button></div>`).join('');
         }
 
         function loadGuestData() {
@@ -749,304 +483,60 @@
             recordsData = JSON.parse(ls.getItem('guest_records') || '[]');
             videoData = JSON.parse(ls.getItem('guest_videos') || '[]');
             timesheetData = JSON.parse(ls.getItem('guest_timesheets') || '[]');
-            const s = JSON.parse(ls.getItem('guest_settings'));
-            if(s) settings = s;
-            const sh = JSON.parse(ls.getItem('guest_sharing'));
-            if(sh) sharingSettings = sh;
-            
-            // Check for guest active session
-            const guestSession = ls.getItem('guest_active_session');
-            if(guestSession) restoreSession(guestSession);
-
-            renderCustomSelectors();
-            renderAll();
+            const s = JSON.parse(ls.getItem('guest_settings')); if(s) settings = s;
+            if(ls.getItem('guest_active_session')) restoreSession(ls.getItem('guest_active_session'));
+            renderCustomSelectors(); renderAll();
         }
-
         function saveGuestData() {
             const ls = localStorage;
             ls.setItem('guest_records', JSON.stringify(recordsData));
             ls.setItem('guest_videos', JSON.stringify(videoData));
             ls.setItem('guest_timesheets', JSON.stringify(timesheetData));
             ls.setItem('guest_settings', JSON.stringify(settings));
-            ls.setItem('guest_sharing', JSON.stringify(sharingSettings));
             renderAll();
         }
+        function renderAll() { renderRecentRecords(); renderDataTree(); renderVideos(); renderCheckins(); calculateAggregates(); updateSettlement(); }
+        
+        function renderCustomSelectors() { createCustomSelect('venue-selector-container', 'income-venue', settings.venues, '選擇場地'); createCustomSelect('stock-source-selector-container', 'stock-source', settings.sources, '選擇來源'); }
+        function createCustomSelect(cId, iId, opts, ph) { document.getElementById(cId).innerHTML = `<label class="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">${ph.replace('選擇', '')}</label><div class="custom-select-wrapper"><div class="custom-select-trigger glass-input rounded-lg p-2.5 text-sm flex justify-between items-center" onclick="toggleSelect('${iId}')"><span id="${iId}-display">${opts[0]||ph}</span><i class="fas fa-chevron-down text-xs text-slate-500"></i></div><input type="hidden" id="${iId}" value="${opts[0]||''}"><div id="${iId}-options" class="custom-select-options">${opts.map(o=>`<div class="custom-option" onclick="selectOption('${iId}','${o}')">${o}</div>`).join('')}</div></div>`; }
+        window.toggleSelect = (id) => { const el=document.getElementById(id+'-options'); const open=el.classList.contains('open'); document.querySelectorAll('.custom-select-options').forEach(e=>e.classList.remove('open')); if(!open) el.classList.add('open'); };
+        window.selectOption = (id,v) => { document.getElementById(id).value=v; document.getElementById(id+'-display').innerText=v; document.getElementById(id+'-options').classList.remove('open'); };
+        document.addEventListener('click', e => { if(!e.target.closest('.custom-select-wrapper')) document.querySelectorAll('.custom-select-options').forEach(el=>el.classList.remove('open')); });
 
-        function renderAll() {
-            renderRecentRecords();
-            renderDataTree();
-            renderVideos();
-            renderCheckins();
-            calculateAggregates();
-            updateSettlement();
-        }
-
-        // --- Custom Select UI ---
-        function renderCustomSelectors() {
-            createCustomSelect('venue-selector-container', 'income-venue', settings.venues, '選擇場地');
-            createCustomSelect('stock-source-selector-container', 'stock-source', settings.sources, '選擇來源');
-        }
-
-        function createCustomSelect(containerId, inputId, options, placeholder) {
-            const container = document.getElementById(containerId);
-            const currentVal = options.length > 0 ? options[0] : '';
-            container.innerHTML = `
-                <label class="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">${placeholder.replace('選擇', '')}</label>
-                <div class="custom-select-wrapper">
-                    <div class="custom-select-trigger glass-input rounded-lg p-2.5 text-sm flex justify-between items-center" onclick="toggleSelect('${inputId}')">
-                        <span id="${inputId}-display">${currentVal || placeholder}</span>
-                        <i class="fas fa-chevron-down text-xs text-slate-500"></i>
-                    </div>
-                    <input type="hidden" id="${inputId}" value="${currentVal}">
-                    <div id="${inputId}-options" class="custom-select-options">
-                        ${options.map(opt => `<div class="custom-option" onclick="selectOption('${inputId}', '${opt}')">${opt}</div>`).join('')}
-                    </div>
-                </div>
-            `;
-        }
-
-        window.toggleSelect = (id) => {
-            const opts = document.getElementById(id + '-options');
-            const wasOpen = opts.classList.contains('open');
-            document.querySelectorAll('.custom-select-options').forEach(el => el.classList.remove('open'));
-            if(!wasOpen) opts.classList.add('open');
-        };
-
-        window.selectOption = (id, val) => {
-            document.getElementById(id).value = val;
-            document.getElementById(id + '-display').innerText = val;
-            document.getElementById(id + '-options').classList.remove('open');
-        };
-
-        document.addEventListener('click', (e) => {
-            if (!e.target.closest('.custom-select-wrapper')) {
-                document.querySelectorAll('.custom-select-options').forEach(el => el.classList.remove('open'));
-            }
-        });
-
-        // --- Core Logic ---
-        window.switchInputMode = (mode) => {
-            const bg = document.getElementById('toggle-bg');
-            const btnIncome = document.getElementById('btn-income');
-            const btnStock = document.getElementById('btn-stock');
-            const formIncome = document.getElementById('form-income');
-            const formStock = document.getElementById('form-stock');
-            if (mode === 'income') {
-                bg.style.transform = 'translateX(0)';
-                btnIncome.className = btnIncome.className.replace('text-slate-400', 'text-cyan-400');
-                btnStock.className = btnStock.className.replace('text-cyan-400', 'text-slate-400');
-                formIncome.classList.remove('hidden');
-                formStock.classList.add('hidden');
-            } else {
-                bg.style.transform = 'translateX(100%)';
-                btnStock.className = btnStock.className.replace('text-slate-400', 'text-cyan-400');
-                btnIncome.className = btnIncome.className.replace('text-cyan-400', 'text-slate-400');
-                formIncome.classList.add('hidden');
-                formStock.classList.remove('hidden');
-            }
-        };
-
-        window.toggleMachineType = () => {
-            const type = document.querySelector('input[name="machineType"]:checked').value;
-            if(type === 'standard') {
-                document.getElementById('standard-amount-input').classList.remove('hidden');
-                document.getElementById('mini-amount-input').classList.add('hidden');
-            } else {
-                document.getElementById('standard-amount-input').classList.add('hidden');
-                document.getElementById('mini-amount-input').classList.remove('hidden');
-            }
-            calculateTotalIncome();
-        };
-
-        window.calculateTotalIncome = () => {
-            const type = document.querySelector('input[name="machineType"]:checked').value;
-            let total = 0;
-            if(type === 'standard') {
-                total = Number(document.getElementById('income-amount').value) || 0;
-            } else {
-                total = (Number(document.getElementById('income-top').value) || 0) + (Number(document.getElementById('income-bottom').value) || 0);
-            }
-            document.getElementById('income-display-total').innerText = '$' + total;
-            return total;
-        };
-
+        window.switchInputMode=(m)=>{const bg=document.getElementById('toggle-bg'); if(m==='income'){bg.style.transform='translateX(0)';document.getElementById('form-income').classList.remove('hidden');document.getElementById('form-stock').classList.add('hidden');}else{bg.style.transform='translateX(100%)';document.getElementById('form-income').classList.add('hidden');document.getElementById('form-stock').classList.remove('hidden');}};
+        window.toggleMachineType=()=>{const t=document.querySelector('input[name="machineType"]:checked').value;document.getElementById('standard-amount-input').classList.toggle('hidden',t!=='standard');document.getElementById('mini-amount-input').classList.toggle('hidden',t!=='mini');window.calculateTotalIncome();};
+        window.calculateTotalIncome=()=>{const t=document.querySelector('input[name="machineType"]:checked').value;let tot=t==='standard'?(Number(document.getElementById('income-amount').value)||0):((Number(document.getElementById('income-top').value)||0)+(Number(document.getElementById('income-bottom').value)||0));document.getElementById('income-display-total').innerText='$'+tot;return tot;};
+        
         window.saveRecord = async (type) => {
             const data = { type, createdAt: new Date().toISOString() };
-            if(type === 'income') {
-                data.date = document.getElementById('income-date').value;
-                if(!data.date) return showToast("請選擇日期");
-                data.venue = document.getElementById('income-venue').value;
-                if(!data.venue) return showToast("請選擇場地");
-                data.machineType = document.querySelector('input[name="machineType"]:checked').value;
-                data.amount = window.calculateTotalIncome();
-                data.remarks = document.getElementById('income-remarks').value;
-            } else {
-                data.date = document.getElementById('stock-date').value;
-                if(!data.date) return showToast("請選擇日期");
-                data.source = document.getElementById('stock-source').value;
-                if(!data.source) return showToast("請選擇來源");
-                data.name = document.getElementById('stock-name').value;
-                data.qty = Number(document.getElementById('stock-qty').value) || 0;
-                data.amount = Number(document.getElementById('stock-cost').value) || 0;
-            }
-            if(isGuest) {
-                data.id = 'guest_' + Date.now();
-                recordsData.unshift(data);
-                saveGuestData();
-            } else {
-                await addDoc(collection(db, getPath('records')), data);
-            }
+            if(type==='income') { data.date=document.getElementById('income-date').value; data.venue=document.getElementById('income-venue').value; data.machineType=document.querySelector('input[name="machineType"]:checked').value; data.amount=Number(document.getElementById('income-display-total').innerText.replace('$','')); data.remarks=document.getElementById('income-remarks').value; if(!data.date||!data.venue) return showToast("資料不完整"); }
+            else { data.date=document.getElementById('stock-date').value; data.source=document.getElementById('stock-source').value; data.name=document.getElementById('stock-name').value; data.qty=Number(document.getElementById('stock-qty').value); data.amount=Number(document.getElementById('stock-cost').value); if(!data.date||!data.source) return showToast("資料不完整"); }
+            if(isGuest) { data.id='guest_'+Date.now(); recordsData.unshift(data); saveGuestData(); }
+            else await addDoc(collection(db, getPath('records')), data);
             showToast("已儲存");
-            if(type==='income') {
-                 document.getElementById('income-amount').value = ''; 
-                 document.getElementById('income-top').value = '';
-                 document.getElementById('income-bottom').value = '';
-                 document.getElementById('income-display-total').innerText='$0';
-            } else {
-                document.getElementById('stock-cost').value = '';
-            }
+            if(type==='income') { document.getElementById('income-amount').value=''; document.getElementById('income-top').value=''; document.getElementById('income-bottom').value=''; document.getElementById('income-display-total').innerText='$0'; } else document.getElementById('stock-cost').value='';
         };
 
         function renderRecentRecords() {
-            const allRecords = [
-                ...recordsData.map(r => ({...r, category: 'record', sortTime: new Date(r.date || r.createdAt).getTime()})),
-                ...videoData.map(v => ({...v, category: 'video', sortTime: new Date(v.date || v.createdAt).getTime()})),
-                ...timesheetData.map(t => ({...t, category: 'checkin', sortTime: new Date(t.start || t.createdAt).getTime()}))
-            ];
-            allRecords.sort((a, b) => b.sortTime - a.sortTime); 
-            const recent = allRecords.slice(0, 10);
-            const el = document.getElementById('recent-records-list');
-            if(recent.length === 0) {
-                el.innerHTML = '<div class="text-center text-slate-500 text-xs py-4">暫無活動記錄</div>';
-                return;
-            }
-            el.innerHTML = recent.map(item => {
-                let icon, color, title, sub, amountStr, amountColor, clickAction;
-                if (item.category === 'record') {
-                    const isIncome = item.type === 'income';
-                    icon = isIncome ? 'fa-gamepad' : 'fa-box';
-                    color = isIncome ? 'text-cyan-400' : 'text-red-400';
-                    title = isIncome ? item.venue : item.name;
-                    sub = item.date;
-                    amountStr = (isIncome ? '+' : '-') + '$' + item.amount;
-                    amountColor = color;
-                    clickAction = `openEditRecord('${item.id}')`;
-                } else if (item.category === 'video') {
-                    icon = 'fa-video';
-                    color = 'text-purple-400';
-                    title = item.title;
-                    sub = new Date(item.date).toLocaleDateString();
-                    amountStr = '+$25';
-                    amountColor = color;
-                    clickAction = `openEditVideo('${item.id}')`;
-                } else if (item.category === 'checkin') {
-                    icon = 'fa-clock';
-                    color = 'text-green-400';
-                    title = '打卡工資';
-                    sub = new Date(item.start).toLocaleDateString();
-                    amountStr = '+$' + item.wage;
-                    amountColor = color;
-                    clickAction = `openEditCheckin('${item.id}')`;
-                }
-                return `
-                    <div class="glass-panel p-3 rounded-xl flex justify-between items-center cursor-pointer hover:bg-slate-800/50 transition border border-slate-700/50 mb-2" onclick="${clickAction}">
-                        <div class="flex items-center gap-3">
-                            <div class="w-8 h-8 rounded-lg bg-slate-800 border border-slate-700 ${color} flex items-center justify-center">
-                                <i class="fas ${icon}"></i>
-                            </div>
-                            <div>
-                                <div class="font-bold text-slate-200 text-sm">${title}</div>
-                                <div class="text-[10px] text-slate-500">${sub}</div>
-                            </div>
-                        </div>
-                        <div class="font-mono font-bold ${amountColor}">${amountStr}</div>
-                    </div>
-                `;
-            }).join('');
+            const all = [...recordsData.map(r=>({...r, cat:'rec', time:new Date(r.date||r.createdAt).getTime()})), ...videoData.map(v=>({...v, cat:'vid', time:new Date(v.date||v.createdAt).getTime()})), ...timesheetData.map(t=>({...t, cat:'chk', time:new Date(t.start||t.createdAt).getTime()}))].sort((a,b)=>b.time-a.time).slice(0,10);
+            document.getElementById('recent-records-list').innerHTML = all.length ? all.map(i => {
+                let ic, col, ti, sub, amt;
+                if(i.cat==='rec') { const inc=i.type==='income'; ic=inc?'fa-gamepad':'fa-box'; col=inc?'text-cyan-400':'text-red-400'; ti=inc?i.venue:i.name; sub=i.date; amt=(inc?'+':'-')+'$'+i.amount; }
+                else if(i.cat==='vid') { ic='fa-video'; col='text-purple-400'; ti=i.title; sub=new Date(i.date).toLocaleDateString(); amt='+$25'; }
+                else { ic='fa-clock'; col='text-green-400'; ti='打卡工資'; sub=new Date(i.start).toLocaleDateString(); amt='+$'+i.wage; }
+                return `<div class="glass-panel p-3 rounded-xl flex justify-between items-center mb-2 border border-slate-700/50"><div class="flex items-center gap-3"><div class="w-8 h-8 rounded-lg bg-slate-800 ${col} flex items-center justify-center"><i class="fas ${ic}"></i></div><div><div class="font-bold text-slate-200 text-sm">${ti}</div><div class="text-[10px] text-slate-500">${sub}</div></div></div><div class="font-mono font-bold ${col}">${amt}</div></div>`;
+            }).join('') : '<div class="text-center text-slate-500 text-xs py-4">暫無活動</div>';
         }
 
-        function calculateAggregates() {
-            const now = new Date();
-            let currentMonthIncome = 0;
-            recordsData.forEach(r => {
-                const d = new Date(r.date);
-                if(r.type === 'income' && d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear()) {
-                    currentMonthIncome += Number(r.amount);
-                }
-            });
-            document.getElementById('projected-income').innerText = '$' + currentMonthIncome;
-        }
-
-        // --- Data Tree ---
         function renderDataTree() {
             const c = document.getElementById('data-tree-container');
-            if (recordsData.length === 0) {
-                 c.innerHTML = `<div class="text-center text-slate-500 mt-10">暫無數據</div>`;
-                 return;
-            }
-            const incomeRecords = recordsData.filter(r => r.type === 'income');
-            const stockRecords = recordsData.filter(r => r.type === 'stock');
-            const incomeTotal = incomeRecords.reduce((sum, r) => sum + Number(r.amount), 0);
-            const stockTotal = stockRecords.reduce((sum, r) => sum + Number(r.amount), 0);
-            c.innerHTML = `
-                ${renderFolderBlock('機台收入', 'income', incomeRecords, incomeTotal, 'text-cyan-400')}
-                ${renderFolderBlock('網上入貨', 'stock', stockRecords, stockTotal, 'text-red-400')}
-            `;
+            if(!recordsData.length) { c.innerHTML='<div class="text-center text-slate-500 mt-10">暫無數據</div>'; return; }
+            const inc = recordsData.filter(r=>r.type==='income'); const st = recordsData.filter(r=>r.type==='stock');
+            c.innerHTML = renderFolderBlock('機台收入','income',inc,inc.reduce((s,r)=>s+Number(r.amount),0),'text-cyan-400') + renderFolderBlock('網上入貨','stock',st,st.reduce((s,r)=>s+Number(r.amount),0),'text-red-400');
         }
-
-        function renderFolderBlock(title, type, records, total, colorClass) {
-            const tree = {};
-            records.forEach(r => {
-                if(!r.date) return;
-                const y = r.date.split('-')[0];
-                const m = r.date.split('-')[1];
-                if(!tree[y]) tree[y] = {};
-                if(!tree[y][m]) tree[y][m] = [];
-                tree[y][m].push(r);
-            });
-            const content = Object.keys(tree).sort((a,b)=>b-a).map(y => {
-                const yTotal = Object.values(tree[y]).flat().reduce((s,r)=>s+Number(r.amount),0);
-                return `
-                <div class="mb-2">
-                    <div class="p-3 bg-slate-800/30 font-bold text-slate-400 border-b border-slate-700/50 flex justify-between items-center cursor-pointer hover:bg-slate-800/50" onclick="document.getElementById('y-${type}-${y}').classList.toggle('hidden')">
-                        <span><i class="fas fa-calendar mr-2"></i>${y} 年</span>
-                        <span class="font-mono text-xs">$${yTotal}</span>
-                    </div>
-                    <div id="y-${type}-${y}" class="hidden pl-2 border-l border-slate-700 ml-2">
-                        ${Object.keys(tree[y]).sort((a,b)=>b-a).map(m => {
-                            const mRecords = tree[y][m].sort((a,b) => new Date(b.date) - new Date(a.date));
-                            const mTotal = mRecords.reduce((s,r)=>s+Number(r.amount),0);
-                            return `
-                            <div class="p-2 border-b border-slate-700/30 cursor-pointer hover:bg-slate-800/50" onclick="document.getElementById('m-${type}-${y}-${m}').classList.toggle('hidden')">
-                                <div class="flex justify-between items-center">
-                                    <span class="text-sm font-bold text-slate-300"><i class="fas fa-folder mr-2 text-yellow-500"></i>${m} 月</span>
-                                    <span class="font-mono text-xs ${colorClass}">$${mTotal}</span>
-                                </div>
-                            </div>
-                            <div id="m-${type}-${y}-${m}" class="hidden bg-slate-900/50 p-2 space-y-1">
-                                ${mRecords.map(i => `
-                                    <div class="flex justify-between p-2 rounded hover:bg-slate-700/50 cursor-pointer text-xs" onclick="openEditRecord('${i.id}')">
-                                        <span class="text-slate-400">${i.date.slice(5)} ${type==='income'?i.venue:i.name}</span>
-                                        <span class="${colorClass} font-mono">$${i.amount}</span>
-                                    </div>
-                                `).join('')}
-                            </div>
-                            `;
-                        }).join('')}
-                    </div>
-                </div>
-            `}).join('');
-            return `
-                <div class="glass-panel rounded-xl overflow-hidden mb-4">
-                    <div class="p-4 bg-slate-800/80 font-bold text-white border-b border-slate-700 flex justify-between items-center cursor-pointer" onclick="document.getElementById('folder-${type}').classList.toggle('hidden')">
-                        <span class="flex items-center gap-2 text-lg"><i class="fas ${type==='income'?'fa-gamepad':'fa-box'} ${colorClass}"></i> ${title}</span>
-                        <span class="font-mono text-sm ${colorClass}">總和: $${total}</span>
-                    </div>
-                    <div id="folder-${type}" class="hidden">
-                        ${content}
-                    </div>
-                </div>
-            `;
+        function renderFolderBlock(t,k,recs,tot,col) {
+            const tree={}; recs.forEach(r=>{if(!r.date)return; const[y,m]=r.date.split('-'); if(!tree[y])tree[y]={}; if(!tree[y][m])tree[y][m]=[]; tree[y][m].push(r);});
+            return `<div class="glass-panel rounded-xl overflow-hidden mb-4"><div class="p-4 bg-slate-800/80 font-bold text-white border-b border-slate-700 flex justify-between items-center cursor-pointer" onclick="document.getElementById('f-${k}').classList.toggle('hidden')"><span class="flex items-center gap-2 text-lg"><i class="fas ${k==='income'?'fa-gamepad':'fa-box'} ${col}"></i> ${t}</span><span class="font-mono text-sm ${col}">總和: $${tot}</span></div><div id="f-${k}" class="hidden">${Object.keys(tree).sort((a,b)=>b-a).map(y=>`<div class="mb-2"><div class="p-3 bg-slate-800/30 text-slate-400 border-b border-slate-700/50 flex justify-between cursor-pointer" onclick="document.getElementById('y-${k}-${y}').classList.toggle('hidden')"><span>${y}年</span><span class="font-mono text-xs">$${Object.values(tree[y]).flat().reduce((s,r)=>s+Number(r.amount),0)}</span></div><div id="y-${k}-${y}" class="hidden pl-2 border-l border-slate-700 ml-2">${Object.keys(tree[y]).sort((a,b)=>b-a).map(m=>`<div class="p-2 border-b border-slate-700/30 cursor-pointer" onclick="document.getElementById('m-${k}-${y}-${m}').classList.toggle('hidden')"><div class="flex justify-between"><span class="text-sm text-slate-300">${m}月</span><span class="font-mono text-xs ${col}">$${tree[y][m].reduce((s,r)=>s+Number(r.amount),0)}</span></div></div><div id="m-${k}-${y}-${m}" class="hidden bg-slate-900/50 p-2 space-y-1">${tree[y][m].map(i=>`<div class="flex justify-between p-2 rounded hover:bg-slate-700/50 text-xs" onclick="openEditRecord('${i.id}')"><span class="text-slate-400">${i.date.slice(5)} ${k==='income'?i.venue:i.name}</span><span class="${col} font-mono">$${i.amount}</span></div>`).join('')}</div>`).join('')}</div></div>`).join('')}</div></div>`;
         }
 
         // --- Video ---
@@ -1055,235 +545,38 @@
             const date = document.getElementById('video-date').value;
             if(!title || !date) return showToast("請填寫完整");
             const data = { title, date, amount: 25, type: 'video', createdAt: new Date().toISOString() };
-            if(isGuest) {
-                data.id = 'vid_' + Date.now();
-                videoData.unshift(data);
-                saveGuestData();
-            } else {
-                await addDoc(collection(db, getPath('videos')), data);
-            }
-            showToast("已新增");
-            document.getElementById('video-title').value = '';
+            if(isGuest) { data.id = 'vid_' + Date.now(); videoData.unshift(data); saveGuestData(); } 
+            else await addDoc(collection(db, getPath('videos')), data);
+            showToast("已新增"); document.getElementById('video-title').value = '';
         };
 
         function renderVideos() {
-            document.getElementById('video-list').innerHTML = videoData.slice(0, 10).map(v => `
-                <div class="glass-panel p-3 rounded-xl flex justify-between items-center cursor-pointer hover:border-purple-500/50 transition border border-slate-700/50" onclick="openEditVideo('${v.id}')">
-                    <div class="flex items-center gap-3">
-                        <div class="bg-purple-500/20 text-purple-400 w-8 h-8 rounded-lg flex items-center justify-center text-xs"><i class="fas fa-play"></i></div>
-                        <div>
-                            <div class="font-bold text-slate-200 text-sm">${v.title}</div>
-                            <div class="text-[10px] text-slate-500">${v.date}</div>
-                        </div>
-                    </div>
-                    <div class="text-purple-400 font-bold font-mono text-sm">+$25</div>
-                </div>
-            `).join('');
+            const list = document.getElementById('video-list');
+            if (videoData.length === 0) { list.innerHTML = '<div class="text-center text-slate-500 text-xs py-4">本月尚無影片</div>'; return; }
+            list.innerHTML = videoData.slice(0, 10).map(v => `<div class="glass-panel p-3 rounded-xl flex justify-between items-center cursor-pointer hover:border-purple-500/50 transition border border-slate-700/50" onclick="openEditVideo('${v.id}')"><div class="flex items-center gap-3"><div class="bg-purple-500/20 text-purple-400 w-8 h-8 rounded-lg flex items-center justify-center text-xs"><i class="fas fa-play"></i></div><div><div class="font-bold text-slate-200 text-sm">${v.title}</div><div class="text-[10px] text-slate-500">${v.date}</div></div></div><div class="text-purple-400 font-bold font-mono text-sm">+$25</div></div>`).join('');
         }
 
         // --- Check-in ---
-        function updateClock() {
-            const now = new Date();
-            document.getElementById('clock-time').innerText = now.toLocaleTimeString('en-GB', {hour12: false});
-            document.getElementById('clock-date').innerText = now.toLocaleDateString('en-GB', { weekday: 'short', year: 'numeric', month: 'short', day: 'numeric' });
-        }
-        setInterval(updateClock, 1000);
-
-        // State Restoration Logic
-        function restoreSession(isoString) {
-            workStart = new Date(isoString);
-            toggleClockButtons(true);
-        }
-
-        function resetClockUI() {
-            workStart = null;
-            toggleClockButtons(false);
-        }
-
-        function toggleClockButtons(isWorking) {
-            const btnIn = document.getElementById('btn-clock-in');
-            const btnOut = document.getElementById('btn-clock-out');
-            if(isWorking) {
-                btnIn.disabled = true;
-                btnIn.classList.add('opacity-50');
-                btnOut.disabled = false;
-                btnOut.classList.remove('cursor-not-allowed', 'bg-slate-700', 'text-slate-500');
-                btnOut.classList.add('bg-red-600', 'text-white', 'shadow-[0_0_20px_rgba(220,38,38,0.4)]');
-            } else {
-                btnIn.disabled = false;
-                btnIn.classList.remove('opacity-50');
-                btnOut.disabled = true;
-                btnOut.classList.add('cursor-not-allowed', 'bg-slate-700', 'text-slate-500');
-                btnOut.classList.remove('bg-red-600', 'text-white', 'shadow-[0_0_20px_rgba(220,38,38,0.4)]');
-            }
-        }
-
-        window.clockIn = async () => {
-            const now = new Date().toISOString();
-            
-            // 1. Update UI immediately
-            restoreSession(now);
-
-            // 2. Persist State
-            if(isGuest) {
-                localStorage.setItem('guest_active_session', now);
-            } else {
-                await setDoc(doc(db, getPath('system'), 'status'), { activeSessionStart: now }, { merge: true });
-            }
-            showToast("上班打卡成功");
-        };
-
-        window.clockOut = async () => {
-            if(!workStart) return;
-            const end = new Date();
-            const mins = (end - workStart) / 1000 / 60;
-            const blocks = Math.round(mins / 30);
-            const wage = blocks * 25;
-            const record = { type: 'checkin', start: workStart.toISOString(), end: end.toISOString(), wage, createdAt: new Date().toISOString() };
-            
-            if(isGuest) {
-                timesheetData.push({...record, id: 'sess_'+Date.now()}); 
-                localStorage.removeItem('guest_active_session');
-                saveGuestData();
-            } else {
-                await addDoc(collection(db, getPath('timesheets')), record);
-                // Clear active session in DB
-                await updateDoc(doc(db, getPath('system'), 'status'), { activeSessionStart: null });
-            }
-
-            resetClockUI();
-            renderCheckins();
-            updateSettlement();
-        };
-
         function renderCheckins() {
-             document.getElementById('checkin-list').innerHTML = timesheetData.slice().reverse().map(t => `
-                <div class="flex justify-between items-center p-3 bg-slate-800/50 rounded-lg border border-slate-700 mb-2 cursor-pointer hover:bg-slate-800" onclick="openEditCheckin('${t.id}')">
-                    <div class="flex flex-col">
-                        <span class="text-[10px] text-slate-400 font-bold uppercase">${new Date(t.start).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})} - ${new Date(t.end).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}</span>
-                        <span class="text-[10px] text-slate-500">${new Date(t.start).toLocaleDateString()}</span>
-                    </div>
-                    <span class="font-bold text-green-400 font-mono text-sm">+$${t.wage}</span>
-                </div>
-            `).join('');
+             const list = document.getElementById('checkin-list');
+             if (timesheetData.length === 0) { list.innerHTML = '<div class="text-center text-slate-500 text-xs py-2">無打卡記錄</div>'; return; }
+             list.innerHTML = timesheetData.slice().reverse().map(t => `<div class="flex justify-between items-center p-3 bg-slate-800/50 rounded-lg border border-slate-700 mb-2 cursor-pointer hover:bg-slate-800" onclick="openEditCheckin('${t.id}')"><div class="flex flex-col"><span class="text-[10px] text-slate-400 font-bold uppercase">${new Date(t.start).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})} - ${new Date(t.end).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}</span><span class="text-[10px] text-slate-500">${new Date(t.start).toLocaleDateString()}</span></div><span class="font-bold text-green-400 font-mono text-sm">+$${t.wage}</span></div>`).join('');
         }
-
-        // --- Settlement ---
-        function updateSettlement() {
-            let mInc = 0, stExp = 0, vInc = 0, wInc = 0;
-            recordsData.forEach(r => {
-                if(r.type === 'income') mInc += Number(r.amount);
-                else stExp += Number(r.amount);
-            });
-            videoData.forEach(v => vInc += Number(v.amount));
-            timesheetData.forEach(t => wInc += Number(t.wage));
-
-            const totalGross = mInc + vInc + wInc;
-            const surplus = totalGross - stExp;
-
-            document.getElementById('settle-net-income').innerText = `$${surplus}`;
-            document.getElementById('settle-machine-net').innerText = `$${mInc}`;
-            document.getElementById('settle-video').innerText = `$${vInc}`;
-            document.getElementById('settle-wages').innerText = `$${wInc}`;
-            document.getElementById('settle-stock').innerText = `$${stExp}`;
-            document.getElementById('settle-total-income').innerText = `$${totalGross}`;
-
-            const ctx = document.getElementById('financeChart').getContext('2d');
-            if(financeChart) financeChart.destroy();
-            financeChart = new Chart(ctx, {
-                type: 'doughnut',
-                data: {
-                    labels: ['機台', '影片', '打卡', '入貨'],
-                    datasets: [{
-                        data: [mInc, vInc, wInc, stExp],
-                        backgroundColor: ['#3b82f6', '#8b5cf6', '#22c55e', '#ef4444'],
-                        borderColor: '#1e293b',
-                        borderWidth: 2
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: { legend: { position: 'bottom', labels: { color: '#94a3b8', font: {family: "'Noto Sans HK'"} } } }
-                }
-            });
-        }
-
-        window.openDrillDown = (type) => {
-            const list = document.getElementById('drilldown-list');
-            const title = document.getElementById('drilldown-title');
-            list.innerHTML = '';
-            let items = [];
-            
-            if(type === 'video') {
-                title.innerText = '影片收入明細';
-                items = videoData.map(v => ({...v, label: v.title, val: v.amount, color: 'text-purple-400'}));
-            } else if(type === 'wages') {
-                title.innerText = '工資明細';
-                items = timesheetData.map(t => ({...t, label: new Date(t.start).toLocaleDateString(), val: t.wage, color: 'text-green-400'}));
-            } else if(type === 'stock') {
-                title.innerText = '入貨支出明細';
-                items = recordsData.filter(r => r.type === 'stock').map(r => ({...r, label: r.name, val: r.amount, color: 'text-red-400'}));
-            } else if(type === 'machine_income') { 
-                title.innerText = '機台收入明細';
-                items = recordsData.filter(r => r.type === 'income').map(r => ({...r, label: r.venue, val: r.amount, color: 'text-blue-400'}));
-            } else { 
-                title.innerText = '所有記錄流水帳';
-                items = [...recordsData, ...videoData.map(v=>({...v, type:'video'})), ...timesheetData.map(t=>({...t, type:'checkin', amount:t.wage}))]
-                        .sort((a,b) => new Date(b.date||b.createdAt) - new Date(a.date||a.createdAt))
-                        .map(i => ({...i, label: i.title||i.venue||i.name||'Check-in', val: i.amount||i.wage, color: i.type==='stock'?'text-red-400':'text-emerald-400'}));
-            }
-            
-            list.innerHTML = items.map(i => `
-                <div class="flex justify-between items-center p-3 border-b border-slate-800 hover:bg-slate-800/50">
-                    <span class="text-sm text-slate-300">${i.label} <span class="text-xs text-slate-500 ml-2">${i.date || i.createdAt.slice(0,10)}</span></span>
-                    <span class="font-mono font-bold ${i.color}">$${i.val}</span>
-                </div>
-            `).join('');
-            document.getElementById('modal-drilldown').classList.remove('hidden');
-        };
 
         // --- Editing ---
-        window.openEditRecord = (id) => {
-            const r = recordsData.find(x => x.id === id);
-            if(!r) return;
-            openEditModal(id, r.type, r, [
-                { id: 'edit-date', label: '日期', type: 'date', val: r.date },
-                { id: 'edit-amount', label: '金額', type: 'number', val: r.amount },
-                { id: 'edit-remark', label: '備註/名稱', type: 'text', val: r.remarks || r.name }
-            ]);
-        };
-        window.openEditVideo = (id) => {
-            const v = videoData.find(x => x.id === id);
-            if(!v) return;
-            openEditModal(id, 'video', v, [
-                { id: 'edit-title', label: '標題', type: 'text', val: v.title },
-                { id: 'edit-date', label: '日期', type: 'date', val: v.date }
-            ]);
-        };
-        window.openEditCheckin = (id) => {
-             const t = timesheetData.find(x => x.id === id);
-             if(!t) return;
-             openEditModal(id, 'checkin', t, [
-                 { id: 'edit-wage', label: '工資', type: 'number', val: t.wage }
-             ]);
-        };
+        window.openEditRecord = (id) => { const r = recordsData.find(x => x.id === id); if(!r) return; openEditModal(id, r.type, r, [ { id: 'edit-date', label: '日期', type: 'date', val: r.date }, { id: 'edit-amount', label: '金額', type: 'number', val: r.amount }, { id: 'edit-remark', label: '備註/名稱', type: 'text', val: r.remarks || r.name } ]); };
+        window.openEditVideo = (id) => { const v = videoData.find(x => x.id === id); if(!v) return; activeEdit = { id, type: 'video', data: v }; document.getElementById('edit-form-container').innerHTML = `<div><label class="text-[10px] text-slate-500 uppercase">標題</label><input type="text" id="edit-title" value="${v.title}" class="w-full glass-input rounded-lg p-2 text-sm"></div><div><label class="text-[10px] text-slate-500 uppercase">日期</label><input type="date" id="edit-date" value="${v.date}" class="w-full glass-input rounded-lg p-2 text-sm"></div>`; document.getElementById('modal-edit').classList.remove('hidden'); };
+        window.openEditCheckin = (id) => { const t = timesheetData.find(x => x.id === id); if(!t) return; activeEdit = { id, type: 'checkin', data: t }; document.getElementById('edit-form-container').innerHTML = `<div><label class="text-[10px] text-slate-500 uppercase">工資 ($)</label><input type="number" id="edit-wage" value="${t.wage}" class="w-full glass-input rounded-lg p-2 text-sm"></div>`; document.getElementById('modal-edit').classList.remove('hidden'); };
 
-        function openEditModal(id, type, data, fields) {
-            activeEdit = { id, type, data };
-            document.getElementById('edit-form-container').innerHTML = fields.map(f => `<div><label class="text-[10px] text-slate-500 uppercase">${f.label}</label><input type="${f.type}" id="${f.id}" value="${f.val}" class="w-full glass-input rounded-lg p-2 text-sm"></div>`).join('');
-            document.getElementById('modal-edit').classList.remove('hidden');
-        }
+        function openEditModal(id, type, data, fields) { activeEdit = { id, type, data }; document.getElementById('edit-form-container').innerHTML = fields.map(f => `<div><label class="text-[10px] text-slate-500 uppercase">${f.label}</label><input type="${f.type}" id="${f.id}" value="${f.val}" class="w-full glass-input rounded-lg p-2 text-sm"></div>`).join(''); document.getElementById('modal-edit').classList.remove('hidden'); }
 
         window.updateCurrentRecord = async () => {
             if(!activeEdit) return;
             const { id, type } = activeEdit;
             const updates = {};
-            if(document.getElementById('edit-date')) updates.date = document.getElementById('edit-date').value;
-            if(document.getElementById('edit-amount')) updates.amount = Number(document.getElementById('edit-amount').value);
-            if(document.getElementById('edit-remark')) type==='income' ? updates.remarks=document.getElementById('edit-remark').value : updates.name=document.getElementById('edit-remark').value;
-            if(document.getElementById('edit-title')) updates.title = document.getElementById('edit-title').value;
-            if(document.getElementById('edit-wage')) updates.wage = Number(document.getElementById('edit-wage').value);
+            // Universal collection
+            const mapping = { 'edit-date': 'date', 'edit-amount': 'amount', 'edit-remark': (type==='income'?'remarks':'name'), 'edit-title': 'title', 'edit-wage': 'wage' };
+            for (const [eid, field] of Object.entries(mapping)) { if(document.getElementById(eid)) updates[field] = (field==='amount'||field==='wage') ? Number(document.getElementById(eid).value) : document.getElementById(eid).value; }
 
             if(isGuest) {
                 if(type === 'video') { const idx = videoData.findIndex(x=>x.id===id); if(idx>-1) Object.assign(videoData[idx], updates); }
@@ -1292,7 +585,7 @@
                 saveGuestData();
             } else {
                 const col = type === 'video' ? 'videos' : (type === 'checkin' ? 'timesheets' : 'records');
-                if(type !== 'checkin') await updateDoc(doc(db, getPath(col), id), updates);
+                await updateDoc(doc(db, getPath(col), id), updates);
             }
             showToast("已更新"); closeModal('modal-edit');
         };
@@ -1312,61 +605,27 @@
             showToast("已刪除"); closeModal('modal-edit');
         };
 
-        // --- Settings & Utils ---
-        window.saveSettings = async () => {
-            if (editingSettings) settings = editingSettings;
-            settings.nickname = document.getElementById('settings-nickname').value;
-            if(isGuest) saveGuestData();
-            else await setDoc(doc(db, getPath('settings'), 'config'), settings, {merge:true});
-            updateUIForUser(); renderCustomSelectors(); showToast("設定已儲存"); closeModal('modal-settings');
-        };
-        
-        window.addSettingItem = (type) => {
-            const inputId = type === 'venues' ? 'new-venue-input' : 'new-source-input';
-            const input = document.getElementById(inputId);
-            const val = input.value.trim();
-            if(!val) return;
-            if(editingSettings[type].includes(val)) return showToast("已存在");
-            editingSettings[type].push(val);
-            input.value = '';
-            renderEditTags(type);
-        };
-        
-        window.removeSettingItem = (type, index) => { editingSettings[type].splice(index, 1); renderEditTags(type); };
-        
-        function renderEditTags(type) {
-            const containerId = type === 'venues' ? 'venues-list' : 'sources-list';
-            const list = editingSettings[type];
-            document.getElementById(containerId).innerHTML = list.map((item, i) => `<div class="tag-chip"><span>${item}</span><i class="fas fa-times cursor-pointer hover:text-white" onclick="removeSettingItem('${type}', ${i})"></i></div>`).join('');
-        }
+        window.openNotifications=()=>document.getElementById('modal-notif').classList.remove('hidden');
+        window.openSettingsModal=()=>{editingSettings=JSON.parse(JSON.stringify(settings));document.getElementById('settings-nickname').value=editingSettings.nickname||'';renderEditTags('venues');renderEditTags('sources');document.getElementById('modal-settings').classList.remove('hidden');};
+        window.openShareModal=()=>{document.getElementById('share-toggle-records').checked=sharingSettings.records!==false;document.getElementById('share-toggle-videos').checked=sharingSettings.videos!==false;document.getElementById('share-toggle-checkin').checked=sharingSettings.checkin!==false;document.getElementById('share-toggle-settlement').checked=sharingSettings.settlement!==false;document.getElementById('modal-share').classList.remove('hidden');};
+        window.saveSharingSettings=async()=>{sharingSettings={records:document.getElementById('share-toggle-records').checked,videos:document.getElementById('share-toggle-videos').checked,checkin:document.getElementById('share-toggle-checkin').checked,settlement:document.getElementById('share-toggle-settlement').checked};if(isGuest){saveGuestData();showToast("訪客設定已保存");}else{await setDoc(doc(db,getPath('settings'),'sharing'),sharingSettings,{merge:true});showToast("權限已更新");}closeModal('modal-share');};
+        window.addSettingItem=(t)=>{const i=document.getElementById(t==='venues'?'new-venue-input':'new-source-input');if(i.value){editingSettings[t].push(i.value);i.value='';renderEditTags(t);}};
+        window.removeSettingItem=(t,ix)=>{editingSettings[t].splice(ix,1);renderEditTags(t);};
+        function renderEditTags(t){document.getElementById(t==='venues'?'venues-list':'sources-list').innerHTML=editingSettings[t].map((x,i)=>`<div class="tag-chip"><span>${x}</span><i class="fas fa-times cursor-pointer" onclick="removeSettingItem('${t}',${i})"></i></div>`).join('');}
+        window.saveSettings=async()=>{settings=editingSettings;if(isGuest)saveGuestData();else await setDoc(doc(db,getPath('settings'),'config'),settings,{merge:true});updateUIForUser();renderCustomSelectors();closeModal('modal-settings');};
+        window.closeModal=(id)=>document.getElementById(id).classList.add('hidden');
+        window.showToast=(m)=>{const t=document.getElementById('toast');document.getElementById('toast-msg').innerText=m;t.classList.remove('opacity-0','translate-y-4');setTimeout(()=>t.classList.add('opacity-0','translate-y-4'),3000)};
+        window.navTo=(t)=>{document.querySelectorAll('.page-section').forEach(e=>e.classList.add('hidden'));document.getElementById('page-'+t).classList.remove('hidden');document.querySelectorAll('.nav-item').forEach(e=>{e.classList.remove('active','text-cyan-400');e.classList.add('text-slate-500')});document.querySelector(`.nav-item[data-target="${t}"]`).classList.add('active','text-cyan-400');if(t==='settlement')updateSettlement();};
 
-        window.navTo = (target) => {
-            document.querySelectorAll('.page-section').forEach(el => el.classList.add('hidden'));
-            document.getElementById('page-' + target).classList.remove('hidden');
-            document.querySelectorAll('.nav-item').forEach(el => { el.classList.remove('active', 'text-cyan-400'); el.classList.add('text-slate-500'); });
-            const btn = document.querySelector(`.nav-item[data-target="${target}"]`);
-            btn.classList.add('active', 'text-cyan-400'); btn.classList.remove('text-slate-500');
-        };
+        setInterval(()=>{const now=new Date();document.getElementById('clock-time').innerText=now.toLocaleTimeString('en-GB',{hour12:false});document.getElementById('clock-date').innerText=now.toLocaleDateString('en-GB',{weekday:'short',year:'numeric',month:'short',day:'numeric'});},1000);
+        function restoreSession(iso){workStart=new Date(iso);document.getElementById('btn-clock-in').classList.add('opacity-50');document.getElementById('btn-clock-in').disabled=true;document.getElementById('btn-clock-out').classList.remove('cursor-not-allowed','bg-slate-700','text-slate-500');document.getElementById('btn-clock-out').classList.add('bg-red-600','text-white');document.getElementById('btn-clock-out').disabled=false;}
+        function resetClockUI(){workStart=null;document.getElementById('btn-clock-in').classList.remove('opacity-50');document.getElementById('btn-clock-in').disabled=false;document.getElementById('btn-clock-out').classList.add('cursor-not-allowed','bg-slate-700','text-slate-500');document.getElementById('btn-clock-out').classList.remove('bg-red-600','text-white');document.getElementById('btn-clock-out').disabled=true;}
+        window.clockIn=async()=>{const n=new Date().toISOString();restoreSession(n);if(isGuest)localStorage.setItem('guest_active_session',n);else await setDoc(doc(db,getPath('system'),'status'),{activeSessionStart:n},{merge:true});showToast("上班");};
+        window.clockOut=async()=>{if(!workStart)return;const e=new Date();const m=(e-workStart)/1000/60;const w=Math.round(m/30)*25;const r={type:'checkin',start:workStart.toISOString(),end:e.toISOString(),wage:w,createdAt:e.toISOString()};if(isGuest){timesheetData.push({...r,id:'s'+Date.now()});localStorage.removeItem('guest_active_session');saveGuestData();}else{await addDoc(collection(db,getPath('timesheets')),r);await updateDoc(doc(db,getPath('system'),'status'),{activeSessionStart:null});}resetClockUI();showToast(`下班 (+$${w})`);renderCheckins();updateSettlement();};
+        function calculateAggregates(){const now=new Date();let m=0;recordsData.forEach(r=>{if(r.type==='income'&&new Date(r.date).getMonth()===now.getMonth())m+=Number(r.amount)});document.getElementById('projected-income').innerText='$'+m;}
+        function updateSettlement(){let m=0,s=0,v=0,w=0;recordsData.forEach(r=>{if(r.type==='income')m+=Number(r.amount);else s+=Number(r.amount)});videoData.forEach(i=>v+=Number(i.amount));timesheetData.forEach(t=>w+=Number(t.wage));const g=m+v+w;document.getElementById('settle-net-income').innerText=`$${g-s}`;document.getElementById('settle-total-income').innerText=`$${g}`;document.getElementById('settle-machine-net').innerText=`$${m}`;document.getElementById('settle-stock').innerText=`$${s}`;document.getElementById('settle-video').innerText=`$${v}`;document.getElementById('settle-wages').innerText=`$${w}`;if(financeChart)financeChart.destroy();financeChart=new Chart(document.getElementById('financeChart').getContext('2d'),{type:'doughnut',data:{labels:['機台','影片','打卡','入貨'],datasets:[{data:[m,v,w,s],backgroundColor:['#3b82f6','#8b5cf6','#10b981','#ef4444'],borderColor:'#1e293b',borderWidth:2}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom',labels:{color:'#94a3b8',font:{family:"'Noto Sans HK'"}}}}}});}
 
-        window.openSettingsModal = () => {
-             editingSettings = JSON.parse(JSON.stringify(settings));
-             document.getElementById('settings-nickname').value = editingSettings.nickname || '';
-             renderEditTags('venues'); renderEditTags('sources');
-             document.getElementById('modal-settings').classList.remove('hidden');
-        };
-        window.openShareModal = () => document.getElementById('modal-share').classList.remove('hidden');
-        window.closeModal = (id) => document.getElementById(id).classList.add('hidden');
-        window.showToast = (msg) => {
-            const t = document.getElementById('toast');
-            document.getElementById('toast-msg').innerText = msg;
-            t.classList.remove('opacity-0', 'translate-y-4');
-            setTimeout(() => t.classList.add('opacity-0', 'translate-y-4'), 3000);
-        };
-        window.sendShareInvite = () => { showToast("已發送邀請"); closeModal('modal-share'); };
-
-        document.getElementById('income-date').valueAsDate = new Date();
-        document.getElementById('stock-date').valueAsDate = new Date();
-        document.getElementById('video-date').valueAsDate = new Date();
+        document.getElementById('income-date').valueAsDate=new Date();document.getElementById('stock-date').valueAsDate=new Date();document.getElementById('video-date').valueAsDate=new Date();
     </script>
 </body>
 </html>
