@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>機台收支管理系統</title>
-    <!-- Theme: Cyberpunk/Future Dark (Deep Slate, Neon Cyan, Electric Purple) -->
+    <!-- Theme: Cyberpunk/Future Dark -->
     
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+HK:wght@300;400;500;700&display=swap" rel="stylesheet">
@@ -16,17 +16,12 @@
             theme: {
                 extend: {
                     colors: {
-                        dark: {
-                            900: '#0f172a',
-                            800: '#1e293b',
-                            700: '#334155',
-                        },
-                        neon: {
-                            blue: '#3b82f6',
-                            cyan: '#06b6d4',
-                            purple: '#8b5cf6',
-                            pink: '#ec4899'
-                        }
+                        dark: { 900: '#0f172a', 800: '#1e293b', 700: '#334155' },
+                        neon: { blue: '#3b82f6', cyan: '#06b6d4', purple: '#8b5cf6', pink: '#ec4899' }
+                    },
+                    boxShadow: {
+                        'glow-cyan': '0 0 15px rgba(6, 182, 212, 0.5)',
+                        'glow-purple': '0 0 15px rgba(139, 92, 246, 0.5)',
                     }
                 }
             }
@@ -42,7 +37,6 @@
             overscroll-behavior-y: none;
         }
         
-        /* Glassmorphism */
         .glass-panel {
             background: rgba(30, 41, 59, 0.7);
             backdrop-filter: blur(12px);
@@ -60,7 +54,7 @@
         .glass-input:focus {
             background: rgba(15, 23, 42, 0.8);
             border-color: #06b6d4;
-            box-shadow: 0 0 15px rgba(6, 182, 212, 0.3);
+            box-shadow: 0 0 10px rgba(6, 182, 212, 0.3);
             outline: none;
         }
 
@@ -69,42 +63,18 @@
         ::-webkit-scrollbar-track { background: transparent; }
         ::-webkit-scrollbar-thumb { background: #475569; border-radius: 10px; }
 
-        /* Animations */
-        @keyframes glow {
-            0%, 100% { box-shadow: 0 0 5px rgba(6, 182, 212, 0.2); }
-            50% { box-shadow: 0 0 20px rgba(6, 182, 212, 0.6); }
-        }
-        .animate-glow { animation: glow 3s infinite; }
-
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(10px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-        .animate-fade-in { animation: fadeIn 0.4s ease-out forwards; }
-
         .nav-item.active { color: #06b6d4; text-shadow: 0 0 10px rgba(6, 182, 212, 0.5); }
         .nav-item.active i { transform: translateY(-4px) scale(1.1); transition: all 0.3s; }
 
-        /* Chart Container */
-        .chart-container {
-            position: relative;
-            width: 100%;
-            max-width: 600px;
-            margin: 0 auto;
-            height: 280px;
-        }
+        .chart-container { position: relative; width: 100%; max-width: 600px; margin: 0 auto; height: 280px; }
 
-        /* Custom Select UI */
-        .custom-select-trigger {
-            cursor: pointer;
-            position: relative;
-        }
+        /* Fixed Custom Select UI */
+        .custom-select-wrapper { position: relative; width: 100%; }
+        .custom-select-trigger { cursor: pointer; position: relative; z-index: 10; }
         .custom-select-options {
             position: absolute;
-            top: 100%;
-            left: 0;
-            right: 0;
-            z-index: 50;
+            top: 100%; left: 0; right: 0;
+            z-index: 50; /* Ensure high z-index */
             background: #1e293b;
             border: 1px solid #334155;
             border-radius: 0.5rem;
@@ -112,40 +82,72 @@
             max-height: 200px;
             overflow-y: auto;
             display: none;
-            box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+            box-shadow: 0 10px 25px rgba(0,0,0,0.8);
         }
-        .custom-select-options.open { display: block; animation: fadeIn 0.2s; }
+        .custom-select-options.open { display: block; }
         .custom-option { padding: 10px 12px; cursor: pointer; transition: background 0.2s; }
         .custom-option:hover { background: #334155; color: #06b6d4; }
+
+        .tag-chip {
+            background: rgba(6, 182, 212, 0.1);
+            border: 1px solid rgba(6, 182, 212, 0.3);
+            color: #06b6d4;
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            display: flex; align-items: center; gap: 6px;
+        }
     </style>
 </head>
 <body class="h-screen flex flex-col overflow-hidden text-slate-200">
 
     <!-- Auth Screen -->
     <div id="auth-screen" class="fixed inset-0 z-50 flex flex-col justify-center items-center p-6 bg-[url('https://images.unsplash.com/photo-1555864326-5cf22ef123cf?q=80&w=2071&auto=format&fit=crop')] bg-cover bg-center">
-        <div class="absolute inset-0 bg-slate-900/80 backdrop-blur-sm"></div>
-        <div class="w-full max-w-sm glass-panel p-8 rounded-2xl animate-fade-in relative z-10 border border-slate-700/50">
+        <div class="absolute inset-0 bg-slate-900/90 backdrop-blur-sm"></div>
+        <div class="w-full max-w-sm glass-panel p-8 rounded-2xl relative z-10 border border-slate-700/50">
             <h1 class="text-4xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-purple-500 mb-2 text-center drop-shadow-lg">機台中樞</h1>
             <p class="text-slate-400 text-center text-xs mb-8 tracking-[0.3em] uppercase">System Access V2.0</p>
 
-            <button onclick="handleGoogleLogin()" class="w-full bg-white text-slate-900 font-bold py-3.5 px-4 rounded-xl mb-4 flex items-center justify-center gap-3 hover:bg-cyan-50 transition-all shadow-[0_0_15px_rgba(255,255,255,0.3)] active:scale-95">
-                <i class="fab fa-google text-red-500"></i> Google 登入
-            </button>
+            <!-- Login View -->
+            <div id="auth-view-login" class="space-y-4">
+                <button onclick="handleGoogleLogin()" class="w-full bg-white text-slate-900 font-bold py-3.5 px-4 rounded-xl mb-4 flex items-center justify-center gap-3 hover:bg-cyan-50 transition-all active:scale-95">
+                    <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" class="w-5 h-5" alt="Google">
+                    <span>Google 登入</span>
+                </button>
 
-            <div class="relative my-6">
-                <div class="absolute inset-0 flex items-center"><div class="w-full border-t border-slate-600"></div></div>
-                <div class="relative flex justify-center text-xs"><span class="px-2 bg-slate-800 text-slate-500 rounded">OR</span></div>
+                <div class="relative my-4">
+                    <div class="absolute inset-0 flex items-center"><div class="w-full border-t border-slate-600"></div></div>
+                    <div class="relative flex justify-center text-xs"><span class="px-2 bg-slate-800 text-slate-500 rounded">OR</span></div>
+                </div>
+
+                <input type="email" id="login-email" placeholder="電子郵件" class="w-full glass-input rounded-xl px-4 py-3 text-sm placeholder-slate-500">
+                <input type="password" id="login-pass" placeholder="密碼" class="w-full glass-input rounded-xl px-4 py-3 text-sm placeholder-slate-500">
+                
+                <button onclick="handleEmailLogin()" class="w-full bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white py-3 rounded-xl text-sm font-bold shadow-glow-cyan transition active:scale-95">
+                    進入系統
+                </button>
+
+                <p class="text-center text-xs text-slate-400 mt-4">
+                    還沒有帳號？ <button onclick="toggleAuthView('register')" class="text-cyan-400 font-bold hover:underline">立即註冊</button>
+                </p>
             </div>
 
-            <input type="email" id="email-input" placeholder="電子郵件" class="w-full glass-input rounded-xl px-4 py-3 mb-3 text-sm placeholder-slate-500">
-            <input type="password" id="password-input" placeholder="密碼" class="w-full glass-input rounded-xl px-4 py-3 mb-4 text-sm placeholder-slate-500">
-            
-            <div class="flex gap-3 mb-6">
-                <button onclick="handleEmailLogin()" class="flex-1 bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white py-2.5 rounded-xl text-sm font-bold shadow-lg shadow-cyan-900/50 transition">登入</button>
-                <button onclick="handleEmailRegister()" class="flex-1 bg-slate-700 hover:bg-slate-600 text-white py-2.5 rounded-xl text-sm font-medium transition">註冊</button>
+            <!-- Register View -->
+            <div id="auth-view-register" class="space-y-4 hidden">
+                <h3 class="text-white text-center font-bold mb-4">註冊新帳號</h3>
+                <input type="email" id="reg-email" placeholder="輸入電子郵件" class="w-full glass-input rounded-xl px-4 py-3 text-sm placeholder-slate-500">
+                <input type="password" id="reg-pass" placeholder="設定密碼" class="w-full glass-input rounded-xl px-4 py-3 text-sm placeholder-slate-500">
+                
+                <button onclick="handleEmailRegister()" class="w-full bg-slate-700 hover:bg-slate-600 text-white py-3 rounded-xl text-sm font-bold transition active:scale-95">
+                    確認註冊
+                </button>
+
+                <p class="text-center text-xs text-slate-400 mt-4">
+                    已有帳號？ <button onclick="toggleAuthView('login')" class="text-cyan-400 font-bold hover:underline">返回登入</button>
+                </p>
             </div>
 
-            <button onclick="handleGuestLogin()" class="block w-full text-center text-slate-500 hover:text-cyan-400 text-xs transition-colors mt-4">
+            <button onclick="handleGuestLogin()" class="block w-full text-center text-slate-500 hover:text-cyan-400 text-xs transition-colors mt-6 pt-4 border-t border-slate-700">
                 <i class="fas fa-user-secret mr-1"></i> 訪客模式 (本機儲存)
             </button>
         </div>
@@ -158,7 +160,7 @@
         <div class="px-5 pt-12 pb-4 flex justify-between items-center z-20 bg-slate-900/80 backdrop-blur-md sticky top-0 border-b border-slate-800">
             <div class="flex items-center gap-3 cursor-pointer group" onclick="openSettingsModal()">
                 <div class="relative">
-                    <img id="user-avatar-img" src="" class="hidden w-11 h-11 rounded-full border-2 border-cyan-500/50 object-cover shadow-[0_0_10px_rgba(6,182,212,0.3)]">
+                    <img id="user-avatar-img" src="" class="hidden w-11 h-11 rounded-full border-2 border-cyan-500/50 object-cover shadow-glow-cyan">
                     <div id="user-avatar-placeholder" class="w-11 h-11 rounded-full bg-gradient-to-br from-cyan-500 to-blue-600 flex items-center justify-center text-white font-bold text-lg border-2 border-slate-800 shadow-lg">U</div>
                     <div class="absolute bottom-0 right-0 w-3 h-3 bg-green-500 rounded-full border-2 border-slate-900 animate-pulse"></div>
                 </div>
@@ -177,7 +179,7 @@
         <div id="content-area" class="flex-1 overflow-y-auto pb-24 scroll-smooth relative">
             
             <!-- Page: Counting -->
-            <div id="page-counting" class="page-section p-5 space-y-5 animate-fade-in">
+            <div id="page-counting" class="page-section p-5 space-y-5">
                 <!-- Forecast Card -->
                 <div class="glass-panel rounded-2xl p-6 relative overflow-hidden group">
                     <div class="absolute inset-0 bg-gradient-to-br from-blue-600/20 to-purple-600/20 opacity-50 group-hover:opacity-70 transition duration-500"></div>
@@ -205,8 +207,7 @@
                             <input type="date" id="income-date" class="w-full glass-input rounded-lg p-2.5 text-sm">
                         </div>
                         <div class="space-y-1" id="venue-selector-container">
-                            <label class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">場地</label>
-                            <!-- Custom Select will be injected here -->
+                            <!-- Custom Select Injected Here -->
                         </div>
                     </div>
 
@@ -249,7 +250,7 @@
 
                     <input type="text" id="income-remarks" placeholder="備註..." class="w-full glass-input rounded-lg p-3 text-sm">
 
-                    <button onclick="saveRecord('income')" class="w-full bg-cyan-600 hover:bg-cyan-500 text-white font-bold py-3.5 rounded-xl shadow-[0_0_15px_rgba(6,182,212,0.4)] active:scale-[0.98] transition-all flex justify-center items-center gap-2">
+                    <button type="button" onclick="saveRecord('income')" class="w-full bg-cyan-600 hover:bg-cyan-500 text-white font-bold py-3.5 rounded-xl shadow-glow-cyan active:scale-[0.98] transition-all flex justify-center items-center gap-2">
                         <i class="fas fa-save"></i> 確認儲存
                     </button>
                 </div>
@@ -262,8 +263,7 @@
                             <input type="date" id="stock-date" class="w-full glass-input rounded-lg p-2.5 text-sm">
                         </div>
                         <div class="space-y-1" id="stock-source-selector-container">
-                            <label class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">來源</label>
-                            <!-- Custom Select Injected -->
+                             <!-- Custom Select Injected Here -->
                         </div>
                     </div>
                     
@@ -274,7 +274,7 @@
                         <input type="number" id="stock-cost" placeholder="成本 $" class="w-full glass-input rounded-lg p-3 text-sm font-mono text-center text-red-400 border-red-900/50">
                     </div>
 
-                    <button onclick="saveRecord('stock')" class="w-full bg-slate-700 hover:bg-slate-600 text-white font-bold py-3.5 rounded-xl shadow-lg active:scale-[0.98] transition-all flex justify-center items-center gap-2">
+                    <button type="button" onclick="saveRecord('stock')" class="w-full bg-slate-700 hover:bg-slate-600 text-white font-bold py-3.5 rounded-xl shadow-lg active:scale-[0.98] transition-all flex justify-center items-center gap-2">
                         <i class="fas fa-box"></i> 記錄支出
                     </button>
                 </div>
@@ -287,13 +287,13 @@
             </div>
 
             <!-- Page: Data -->
-            <div id="page-data" class="hidden p-5 page-section animate-fade-in">
+            <div id="page-data" class="hidden p-5 page-section">
                 <h3 class="text-xl font-bold text-white mb-4 flex items-center gap-2"><i class="fas fa-database text-cyan-400"></i> 資料庫</h3>
-                <div id="data-tree-container" class="space-y-3"></div>
+                <div id="data-tree-container" class="space-y-3 pb-20"></div>
             </div>
 
             <!-- Page: Video -->
-            <div id="page-video" class="hidden p-5 page-section animate-fade-in space-y-5">
+            <div id="page-video" class="hidden p-5 page-section space-y-5">
                 <div class="glass-panel rounded-2xl p-6 relative">
                     <div class="flex justify-between items-start">
                         <div>
@@ -306,7 +306,8 @@
                     <div class="mt-6 space-y-3">
                         <input type="text" id="video-title" placeholder="影片標題" class="w-full glass-input rounded-lg p-3 text-sm">
                         <input type="date" id="video-date" class="w-full glass-input rounded-lg p-3 text-sm">
-                        <button onclick="saveVideoRecord()" class="w-full bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold py-3 rounded-xl shadow-[0_0_15px_rgba(168,85,247,0.4)] active:scale-95 transition">
+                        <!-- Added type="button" to prevent form submission logic -->
+                        <button type="button" onclick="saveVideoRecord()" class="w-full bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold py-3 rounded-xl shadow-glow-purple active:scale-95 transition">
                             <i class="fas fa-upload mr-1"></i> 新增記錄
                         </button>
                     </div>
@@ -319,9 +320,9 @@
             </div>
 
             <!-- Page: Check-in -->
-            <div id="page-checkin" class="hidden p-5 page-section animate-fade-in h-full flex flex-col justify-center">
+            <div id="page-checkin" class="hidden p-5 page-section h-full flex flex-col justify-center">
                 <div class="flex-1 flex flex-col justify-center items-center">
-                    <div class="relative w-72 h-72 rounded-full border-4 border-slate-700/50 bg-slate-900/50 flex items-center justify-center mb-10 shadow-[0_0_50px_rgba(6,182,212,0.1)] relative">
+                    <div class="relative w-72 h-72 rounded-full border-4 border-slate-700/50 bg-slate-900/50 flex items-center justify-center mb-10 shadow-[0_0_50px_rgba(6,182,212,0.1)]">
                         <!-- Decor rings -->
                         <div class="absolute inset-2 rounded-full border border-cyan-500/20 border-dashed animate-spin-slow" style="animation-duration: 20s"></div>
                         <div class="absolute inset-0 rounded-full border-t-2 border-cyan-400 opacity-20 animate-spin"></div>
@@ -333,10 +334,10 @@
                     </div>
 
                     <div class="w-full max-w-xs grid grid-cols-2 gap-4">
-                        <button onclick="clockIn()" id="btn-clock-in" class="bg-green-600 hover:bg-green-500 text-white font-bold py-4 rounded-2xl shadow-[0_0_20px_rgba(34,197,94,0.3)] active:scale-95 transition-all text-lg border border-green-500/50">
+                        <button type="button" onclick="clockIn()" id="btn-clock-in" class="bg-green-600 hover:bg-green-500 text-white font-bold py-4 rounded-2xl shadow-[0_0_20px_rgba(34,197,94,0.3)] active:scale-95 transition-all text-lg border border-green-500/50">
                             <i class="fas fa-fingerprint mb-1 block text-2xl"></i> 上班
                         </button>
-                        <button onclick="clockOut()" id="btn-clock-out" class="bg-slate-700 text-slate-500 font-bold py-4 rounded-2xl cursor-not-allowed text-lg border border-slate-600" disabled>
+                        <button type="button" onclick="clockOut()" id="btn-clock-out" class="bg-slate-700 text-slate-500 font-bold py-4 rounded-2xl cursor-not-allowed text-lg border border-slate-600" disabled>
                             <i class="fas fa-power-off mb-1 block text-2xl"></i> 下班
                         </button>
                     </div>
@@ -349,7 +350,7 @@
             </div>
 
             <!-- Page: Settlement -->
-            <div id="page-settlement" class="hidden p-5 page-section animate-fade-in space-y-6">
+            <div id="page-settlement" class="hidden p-5 page-section space-y-6">
                 <!-- Net Total Card -->
                 <div class="glass-panel rounded-2xl p-6 relative cursor-pointer hover:border-cyan-500/50 transition-colors" onclick="openDrillDown('total')">
                     <div class="flex justify-between items-start">
@@ -427,28 +428,24 @@
 
     </div>
 
-    <!-- Edit Modal (Dynamic) -->
+    <!-- Edit Modal -->
     <div id="modal-edit" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-        <div class="w-full max-w-sm glass-panel p-6 rounded-2xl animate-fade-in border border-slate-700 shadow-2xl">
+        <div class="w-full max-w-sm glass-panel p-6 rounded-2xl border border-slate-700 shadow-2xl">
             <h3 class="text-lg font-bold text-white mb-4 flex items-center gap-2">
                 <i class="fas fa-edit text-cyan-400"></i> 編輯記錄
             </h3>
-            
-            <div id="edit-form-container" class="space-y-4 mb-6">
-                <!-- Inputs injected via JS -->
-            </div>
-
+            <div id="edit-form-container" class="space-y-4 mb-6"></div>
             <div class="flex gap-3">
-                <button onclick="closeModal('modal-edit')" class="flex-1 bg-slate-700 text-slate-300 py-3 rounded-xl font-bold text-sm">取消</button>
-                <button onclick="deleteCurrentRecord()" class="flex-1 bg-red-900/50 text-red-400 border border-red-900 hover:bg-red-900/80 py-3 rounded-xl font-bold text-sm">刪除</button>
-                <button onclick="updateCurrentRecord()" class="flex-1 bg-cyan-600 text-white hover:bg-cyan-500 py-3 rounded-xl font-bold text-sm">儲存</button>
+                <button type="button" onclick="closeModal('modal-edit')" class="flex-1 bg-slate-700 text-slate-300 py-3 rounded-xl font-bold text-sm">取消</button>
+                <button type="button" onclick="deleteCurrentRecord()" class="flex-1 bg-red-900/50 text-red-400 border border-red-900 hover:bg-red-900/80 py-3 rounded-xl font-bold text-sm">刪除</button>
+                <button type="button" onclick="updateCurrentRecord()" class="flex-1 bg-cyan-600 text-white hover:bg-cyan-500 py-3 rounded-xl font-bold text-sm">儲存</button>
             </div>
         </div>
     </div>
 
     <!-- Drill Down Modal -->
     <div id="modal-drilldown" class="hidden fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/60 backdrop-blur-sm">
-        <div class="w-full max-w-md h-[80vh] bg-slate-900 rounded-t-2xl sm:rounded-2xl p-6 animate-fade-in border-t border-slate-700 flex flex-col">
+        <div class="w-full max-w-md h-[80vh] bg-slate-900 rounded-t-2xl sm:rounded-2xl p-6 border-t border-slate-700 flex flex-col">
             <div class="flex justify-between items-center mb-4">
                 <h3 class="text-lg font-bold text-white" id="drilldown-title">詳細記錄</h3>
                 <button onclick="closeModal('modal-drilldown')" class="w-8 h-8 rounded-full bg-slate-800 text-slate-400 flex items-center justify-center"><i class="fas fa-times"></i></button>
@@ -459,27 +456,37 @@
 
     <!-- Settings Modal -->
     <div id="modal-settings" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-        <div class="w-full max-w-md glass-panel p-6 rounded-2xl animate-fade-in border border-slate-700">
+        <div class="w-full max-w-md glass-panel p-6 rounded-2xl border border-slate-700">
             <h3 class="text-lg font-bold text-white mb-6">系統設定</h3>
             
             <label class="text-[10px] font-bold text-slate-500 uppercase block mb-2">顯示暱稱</label>
-            <input type="text" id="settings-nickname" class="w-full glass-input rounded-xl p-3 mb-4 text-sm">
+            <input type="text" id="settings-nickname" class="w-full glass-input rounded-xl p-3 mb-6 text-sm">
 
-            <label class="text-[10px] font-bold text-slate-500 uppercase block mb-2">自定義場地 (逗號分隔)</label>
-            <input type="text" id="settings-venues" class="w-full glass-input rounded-xl p-3 mb-4 text-sm" placeholder="旺角, 銅鑼灣...">
+            <!-- Venues Input -->
+            <label class="text-[10px] font-bold text-slate-500 uppercase block mb-2">自定義場地</label>
+            <div class="flex gap-2 mb-3">
+                <input type="text" id="new-venue-input" class="flex-1 glass-input rounded-xl p-3 text-sm" placeholder="輸入場地名稱..." onkeypress="if(event.key==='Enter') addSettingItem('venues')">
+                <button type="button" onclick="addSettingItem('venues')" class="bg-slate-700 hover:bg-cyan-600 text-white w-12 rounded-xl transition flex items-center justify-center"><i class="fas fa-plus"></i></button>
+            </div>
+            <div id="venues-list" class="flex flex-wrap gap-2 mb-6 min-h-[30px]"></div>
 
-            <label class="text-[10px] font-bold text-slate-500 uppercase block mb-2">自定義入貨來源 (逗號分隔)</label>
-            <input type="text" id="settings-sources" class="w-full glass-input rounded-xl p-3 mb-6 text-sm" placeholder="淘寶, 日本代購...">
+            <!-- Sources Input -->
+            <label class="text-[10px] font-bold text-slate-500 uppercase block mb-2">自定義入貨來源</label>
+            <div class="flex gap-2 mb-3">
+                <input type="text" id="new-source-input" class="flex-1 glass-input rounded-xl p-3 text-sm" placeholder="輸入來源名稱..." onkeypress="if(event.key==='Enter') addSettingItem('sources')">
+                <button type="button" onclick="addSettingItem('sources')" class="bg-slate-700 hover:bg-cyan-600 text-white w-12 rounded-xl transition flex items-center justify-center"><i class="fas fa-plus"></i></button>
+            </div>
+            <div id="sources-list" class="flex flex-wrap gap-2 mb-6 min-h-[30px]"></div>
 
-            <button onclick="saveSettings()" class="w-full bg-cyan-600 text-white font-bold py-3 rounded-xl mb-3 shadow-[0_0_15px_rgba(6,182,212,0.3)]">儲存變更</button>
-            <button onclick="handleLogout()" class="w-full border border-red-500/30 text-red-400 font-bold py-3 rounded-xl hover:bg-red-900/20">登出帳戶</button>
-            <button onclick="closeModal('modal-settings')" class="w-full text-slate-500 text-sm mt-3 hover:text-white">取消</button>
+            <button type="button" onclick="saveSettings()" class="w-full bg-cyan-600 text-white font-bold py-3 rounded-xl mb-3 shadow-glow-cyan hover:bg-cyan-500 transition">儲存變更</button>
+            <button type="button" onclick="handleLogout()" class="w-full border border-red-500/30 text-red-400 font-bold py-3 rounded-xl hover:bg-red-900/20 transition mb-3">登出帳戶</button>
+            <button type="button" onclick="closeModal('modal-settings')" class="w-full text-slate-500 text-sm hover:text-white transition">取消</button>
         </div>
     </div>
 
     <!-- Share Modal -->
     <div id="modal-share" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-        <div class="w-full max-w-md glass-panel p-6 rounded-2xl animate-fade-in border border-slate-700">
+        <div class="w-full max-w-md glass-panel p-6 rounded-2xl border border-slate-700">
             <h3 class="text-lg font-bold text-white mb-4">資料分享</h3>
             <p class="text-xs text-slate-400 mb-5">輸入對方 Email 邀請查看您的資料。</p>
             
@@ -504,8 +511,8 @@
                 </label>
             </div>
 
-            <button onclick="sendShareInvite()" class="w-full bg-cyan-600 text-white font-bold py-3 rounded-xl shadow-lg">發送邀請</button>
-            <button onclick="closeModal('modal-share')" class="w-full text-slate-500 text-sm mt-3 hover:text-white">取消</button>
+            <button type="button" onclick="sendShareInvite()" class="w-full bg-cyan-600 text-white font-bold py-3 rounded-xl shadow-lg">發送邀請</button>
+            <button type="button" onclick="closeModal('modal-share')" class="w-full text-slate-500 text-sm mt-3 hover:text-white">取消</button>
         </div>
     </div>
 
@@ -540,31 +547,36 @@
         let videoData = [];
         let timesheetData = [];
         let financeChart = null;
+        let settings = { nickname: '', venues: ['旺角中心', '現時點', '信和中心'], sources: ['淘寶', '本地批發', '日本代購'] };
+        let editingSettings = null;
+        let activeEdit = null;
 
-        // Settings State
-        let settings = {
-            nickname: '',
-            venues: ['旺角中心', '現時點', '信和中心'], // Default
-            sources: ['淘寶', '本地批發', '日本代購'] // Default
+        // --- Auth & View Logic ---
+        window.toggleAuthView = (view) => {
+            const loginView = document.getElementById('auth-view-login');
+            const regView = document.getElementById('auth-view-register');
+            if(view === 'register') {
+                loginView.classList.add('hidden');
+                regView.classList.remove('hidden');
+            } else {
+                regView.classList.add('hidden');
+                loginView.classList.remove('hidden');
+            }
         };
 
-        let activeEdit = null; // { id, type, data }
-
-        // --- Auth ---
         window.handleGoogleLogin = async () => {
-            try {
-                await signInWithPopup(auth, new GoogleAuthProvider());
-            } catch (e) { showToast("登入失敗: " + e.message); }
+            try { await signInWithPopup(auth, new GoogleAuthProvider()); } 
+            catch (e) { showToast("登入失敗: " + e.message); }
         };
         window.handleEmailLogin = async () => {
-            const e = document.getElementById('email-input').value;
-            const p = document.getElementById('password-input').value;
+            const e = document.getElementById('login-email').value;
+            const p = document.getElementById('login-pass').value;
             if(!e||!p) return showToast("請輸入電郵及密碼");
             try { await signInWithEmailAndPassword(auth, e, p); } catch(err){ showToast(err.message); }
         };
         window.handleEmailRegister = async () => {
-            const e = document.getElementById('email-input').value;
-            const p = document.getElementById('password-input').value;
+            const e = document.getElementById('reg-email').value;
+            const p = document.getElementById('reg-pass').value;
             if(!e||!p) return showToast("請輸入電郵及密碼");
             try { await createUserWithEmailAndPassword(auth, e, p); showToast("註冊成功"); } catch(err){ showToast(err.message); }
         };
@@ -595,10 +607,8 @@
         function updateUIForUser() {
             document.getElementById('display-username').innerText = currentUser.displayName || settings.nickname || "使用者";
             document.getElementById('display-email').innerText = currentUser.email;
-            
             const avatarImg = document.getElementById('user-avatar-img');
             const avatarPlaceholder = document.getElementById('user-avatar-placeholder');
-            
             if(currentUser.photoURL) {
                 avatarImg.src = currentUser.photoURL;
                 avatarImg.classList.remove('hidden');
@@ -614,8 +624,6 @@
 
         async function initRealtimeListeners() {
             if(isGuest) return;
-            
-            // Settings
             onSnapshot(doc(db, getPath('settings'), 'config'), (snap) => {
                 if(snap.exists()) {
                     const d = snap.data();
@@ -626,13 +634,10 @@
                 }
                 renderCustomSelectors();
             });
-
-            // Records
             onSnapshot(query(collection(db, getPath('records')), orderBy('date', 'desc')), (snap) => {
                 recordsData = snap.docs.map(d => ({id: d.id, ...d.data()}));
                 renderAll();
             });
-            // Videos
             onSnapshot(query(collection(db, getPath('videos')), orderBy('date', 'desc')), (snap) => {
                 videoData = snap.docs.map(d => ({id: d.id, ...d.data()}));
                 renderAll();
@@ -643,11 +648,9 @@
             const ls = localStorage;
             recordsData = JSON.parse(ls.getItem('guest_records') || '[]');
             videoData = JSON.parse(ls.getItem('guest_videos') || '[]');
-            timesheetData = JSON.parse(ls.getItem('guest_timesheets') || '[]'); // Mock for session
-            
+            timesheetData = JSON.parse(ls.getItem('guest_timesheets') || '[]');
             const s = JSON.parse(ls.getItem('guest_settings'));
             if(s) settings = s;
-            
             renderCustomSelectors();
             renderAll();
         }
@@ -665,12 +668,12 @@
             renderRecentRecords();
             renderDataTree();
             renderVideos();
-            renderCheckins(); // Also renders check-ins list
+            renderCheckins();
             calculateAggregates();
             updateSettlement();
         }
 
-        // --- Custom Select UI Logic ---
+        // --- Custom Select UI (Fixed Positioning) ---
         function renderCustomSelectors() {
             createCustomSelect('venue-selector-container', 'income-venue', settings.venues, '選擇場地');
             createCustomSelect('stock-source-selector-container', 'stock-source', settings.sources, '選擇來源');
@@ -678,15 +681,19 @@
 
         function createCustomSelect(containerId, inputId, options, placeholder) {
             const container = document.getElementById(containerId);
+            const currentVal = options.length > 0 ? options[0] : '';
+            // Ensure wrapper is present to anchor absolute dropdown
             container.innerHTML = `
                 <label class="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">${placeholder.replace('選擇', '')}</label>
-                <div class="custom-select-trigger glass-input rounded-lg p-2.5 text-sm flex justify-between items-center" onclick="toggleSelect('${inputId}')">
-                    <span id="${inputId}-display">${options[0] || placeholder}</span>
-                    <i class="fas fa-chevron-down text-xs text-slate-500"></i>
-                </div>
-                <input type="hidden" id="${inputId}" value="${options[0] || ''}">
-                <div id="${inputId}-options" class="custom-select-options">
-                    ${options.map(opt => `<div class="custom-option" onclick="selectOption('${inputId}', '${opt}')">${opt}</div>`).join('')}
+                <div class="custom-select-wrapper">
+                    <div class="custom-select-trigger glass-input rounded-lg p-2.5 text-sm flex justify-between items-center" onclick="toggleSelect('${inputId}')">
+                        <span id="${inputId}-display">${currentVal || placeholder}</span>
+                        <i class="fas fa-chevron-down text-xs text-slate-500"></i>
+                    </div>
+                    <input type="hidden" id="${inputId}" value="${currentVal}">
+                    <div id="${inputId}-options" class="custom-select-options">
+                        ${options.map(opt => `<div class="custom-option" onclick="selectOption('${inputId}', '${opt}')">${opt}</div>`).join('')}
+                    </div>
                 </div>
             `;
         }
@@ -694,7 +701,7 @@
         window.toggleSelect = (id) => {
             const opts = document.getElementById(id + '-options');
             const wasOpen = opts.classList.contains('open');
-            document.querySelectorAll('.custom-select-options').forEach(el => el.classList.remove('open')); // Close others
+            document.querySelectorAll('.custom-select-options').forEach(el => el.classList.remove('open'));
             if(!wasOpen) opts.classList.add('open');
         };
 
@@ -704,6 +711,13 @@
             document.getElementById(id + '-options').classList.remove('open');
         };
 
+        // Close select when clicking outside
+        document.addEventListener('click', (e) => {
+            if (!e.target.closest('.custom-select-wrapper')) {
+                document.querySelectorAll('.custom-select-options').forEach(el => el.classList.remove('open'));
+            }
+        });
+
         // --- Core Logic ---
         window.switchInputMode = (mode) => {
             const bg = document.getElementById('toggle-bg');
@@ -711,7 +725,6 @@
             const btnStock = document.getElementById('btn-stock');
             const formIncome = document.getElementById('form-income');
             const formStock = document.getElementById('form-stock');
-
             if (mode === 'income') {
                 bg.style.transform = 'translateX(0)';
                 btnIncome.className = btnIncome.className.replace('text-slate-400', 'text-cyan-400');
@@ -757,6 +770,7 @@
                 data.date = document.getElementById('income-date').value;
                 if(!data.date) return showToast("請選擇日期");
                 data.venue = document.getElementById('income-venue').value;
+                if(!data.venue) return showToast("請選擇場地");
                 data.machineType = document.querySelector('input[name="machineType"]:checked').value;
                 data.amount = window.calculateTotalIncome();
                 data.remarks = document.getElementById('income-remarks').value;
@@ -764,11 +778,11 @@
                 data.date = document.getElementById('stock-date').value;
                 if(!data.date) return showToast("請選擇日期");
                 data.source = document.getElementById('stock-source').value;
+                if(!data.source) return showToast("請選擇來源");
                 data.name = document.getElementById('stock-name').value;
                 data.qty = Number(document.getElementById('stock-qty').value) || 0;
                 data.amount = Number(document.getElementById('stock-cost').value) || 0;
             }
-
             if(isGuest) {
                 data.id = 'guest_' + Date.now();
                 recordsData.unshift(data);
@@ -777,7 +791,6 @@
                 await addDoc(collection(db, getPath('records')), data);
             }
             showToast("已儲存");
-            // Reset
             if(type==='income') {
                  document.getElementById('income-amount').value = ''; 
                  document.getElementById('income-top').value = '';
@@ -818,10 +831,16 @@
             document.getElementById('projected-income').innerText = '$' + currentMonthIncome;
         }
 
-        // --- Data Tree ---
+        // --- Data Tree (Improved) ---
         function renderDataTree() {
             const tree = {};
+            if (recordsData.length === 0) {
+                 document.getElementById('data-tree-container').innerHTML = `<div class="text-center text-slate-500 mt-10">暫無數據</div>`;
+                 return;
+            }
+
             recordsData.forEach(r => {
+                if(!r.date) return;
                 const y = r.date.split('-')[0];
                 const m = r.date.split('-')[1];
                 if(!tree[y]) tree[y] = {};
@@ -832,13 +851,14 @@
             const c = document.getElementById('data-tree-container');
             c.innerHTML = Object.keys(tree).sort((a,b)=>b-a).map(y => `
                 <div class="glass-panel rounded-xl overflow-hidden mb-2">
-                    <div class="p-3 bg-slate-800/50 font-bold text-slate-300 border-b border-slate-700 flex justify-between">
+                    <div class="p-3 bg-slate-800/50 font-bold text-slate-300 border-b border-slate-700 flex justify-between items-center">
                         <span>${y} 年</span>
+                        <span class="text-xs text-slate-500">展開</span>
                     </div>
                     ${Object.keys(tree[y]).sort((a,b)=>b-a).map(m => `
-                        <div class="p-3 border-b border-slate-700/50 cursor-pointer hover:bg-slate-700/30" onclick="document.getElementById('m-${y}-${m}').classList.toggle('hidden')">
+                        <div class="p-3 border-b border-slate-700/50 cursor-pointer hover:bg-slate-700/30 transition" onclick="document.getElementById('m-${y}-${m}').classList.toggle('hidden')">
                             <div class="flex justify-between items-center">
-                                <span class="text-sm font-bold text-cyan-500"><i class="fas fa-folder mr-2"></i>${m} 月</span>
+                                <span class="text-sm font-bold text-cyan-500 flex items-center"><i class="fas fa-folder mr-2 text-yellow-500"></i>${m} 月</span>
                                 <i class="fas fa-chevron-down text-xs text-slate-600"></i>
                             </div>
                         </div>
@@ -860,7 +880,6 @@
             const title = document.getElementById('video-title').value;
             const date = document.getElementById('video-date').value;
             if(!title || !date) return showToast("請填寫完整");
-            
             const data = { title, date, amount: 25, type: 'video', createdAt: new Date().toISOString() };
             if(isGuest) {
                 data.id = 'vid_' + Date.now();
@@ -891,7 +910,7 @@
         // --- Check-in ---
         function updateClock() {
             const now = new Date();
-            document.getElementById('clock-time').innerText = now.toLocaleTimeString('en-GB', {hour12: false}); // Includes seconds
+            document.getElementById('clock-time').innerText = now.toLocaleTimeString('en-GB', {hour12: false});
             document.getElementById('clock-date').innerText = now.toLocaleDateString('en-GB', { weekday: 'short', year: 'numeric', month: 'short', day: 'numeric' });
         }
         setInterval(updateClock, 1000);
@@ -912,26 +931,15 @@
             const mins = (end - workStart) / 1000 / 60;
             const blocks = Math.round(mins / 30);
             const wage = blocks * 25;
-            
-            const record = {
-                type: 'checkin',
-                start: workStart.toISOString(),
-                end: end.toISOString(),
-                wage,
-                createdAt: new Date().toISOString()
-            };
-            
-            timesheetData.push({...record, id: 'sess_'+Date.now()}); // Mock save
+            const record = { type: 'checkin', start: workStart.toISOString(), end: end.toISOString(), wage, createdAt: new Date().toISOString() };
+            timesheetData.push({...record, id: 'sess_'+Date.now()}); 
             if(isGuest) saveGuestData();
-            // Note: In real app, save to firestore collection 'timesheets'
-            
             workStart = null;
             document.getElementById('btn-clock-in').disabled = false;
             document.getElementById('btn-clock-in').classList.remove('opacity-50');
             document.getElementById('btn-clock-out').disabled = true;
             document.getElementById('btn-clock-out').classList.add('cursor-not-allowed', 'bg-slate-700', 'text-slate-500');
             document.getElementById('btn-clock-out').classList.remove('bg-red-600', 'text-white', 'shadow-[0_0_20px_rgba(220,38,38,0.4)]');
-            
             renderCheckins();
             updateSettlement();
         };
@@ -948,7 +956,7 @@
             `).join('');
         }
 
-        // --- Settlement & Drill Down ---
+        // --- Settlement ---
         function updateSettlement() {
             let mInc = 0, stExp = 0, vInc = 0, wInc = 0;
             recordsData.forEach(r => {
@@ -960,8 +968,7 @@
 
             const totalGross = mInc + vInc + wInc;
             const totalNet = totalGross - stExp;
-            const machineNet = mInc; // Usually machine net implies deducting costs, but here user asked specifically. If user implies Machine Income - Stock, then: mInc - stExp. Let's assume Pure Machine Income for now based on request "Net Machine Income" likely implies Machine - Costs if allocated, or just machine profit. Let's display (Machine - Stock) as Machine Net? Or just Machine? 
-            // Request: "顯示淨機台收入，淨總收入" -> Net Machine Income likely = Machine Income - Stock Cost.
+            const machineNet = mInc; 
             const netMachine = mInc - stExp;
 
             document.getElementById('settle-net-income').innerText = `$${totalNet}`;
@@ -971,7 +978,6 @@
             document.getElementById('settle-stock').innerText = `$${stExp}`;
             document.getElementById('settle-total-income').innerText = `$${totalGross}`;
 
-            // Chart
             const ctx = document.getElementById('financeChart').getContext('2d');
             if(financeChart) financeChart.destroy();
             financeChart = new Chart(ctx, {
@@ -997,7 +1003,6 @@
             const list = document.getElementById('drilldown-list');
             const title = document.getElementById('drilldown-title');
             list.innerHTML = '';
-            
             let items = [];
             if(type === 'video') {
                 title.innerText = '影片收入明細';
@@ -1011,24 +1016,22 @@
             } else if(type === 'machine_net' || type === 'gross_income') {
                 title.innerText = type === 'machine_net' ? '機台淨收明細 (收-支)' : '機台收入明細';
                 items = recordsData.filter(r => r.type === 'income').map(r => ({...r, label: r.venue, val: r.amount, color: 'text-blue-400'}));
-            } else { // Total
+            } else { 
                 title.innerText = '所有記錄流水帳';
                 items = [...recordsData, ...videoData.map(v=>({...v, type:'video'})), ...timesheetData.map(t=>({...t, type:'checkin', amount:t.wage}))]
                         .sort((a,b) => new Date(b.date||b.createdAt) - new Date(a.date||a.createdAt))
                         .map(i => ({...i, label: i.title||i.venue||i.name||'Check-in', val: i.amount||i.wage, color: i.type==='stock'?'text-red-400':'text-emerald-400'}));
             }
-
             list.innerHTML = items.map(i => `
                 <div class="flex justify-between items-center p-3 border-b border-slate-800 hover:bg-slate-800/50">
                     <span class="text-sm text-slate-300">${i.label} <span class="text-xs text-slate-500 ml-2">${i.date || i.createdAt.slice(0,10)}</span></span>
                     <span class="font-mono font-bold ${i.color}">$${i.val}</span>
                 </div>
             `).join('');
-            
             document.getElementById('modal-drilldown').classList.remove('hidden');
         };
 
-        // --- Editing Logic ---
+        // --- Editing ---
         window.openEditRecord = (id) => {
             const r = recordsData.find(x => x.id === id);
             if(!r) return;
@@ -1049,7 +1052,6 @@
         window.openEditCheckin = (id) => {
              const t = timesheetData.find(x => x.id === id);
              if(!t) return;
-             // Edit wage directly for simplicity
              openEditModal(id, 'checkin', t, [
                  { id: 'edit-wage', label: '工資', type: 'number', val: t.wage }
              ]);
@@ -1057,13 +1059,7 @@
 
         function openEditModal(id, type, data, fields) {
             activeEdit = { id, type, data };
-            const container = document.getElementById('edit-form-container');
-            container.innerHTML = fields.map(f => `
-                <div>
-                    <label class="text-[10px] text-slate-500 uppercase">${f.label}</label>
-                    <input type="${f.type}" id="${f.id}" value="${f.val}" class="w-full glass-input rounded-lg p-2 text-sm">
-                </div>
-            `).join('');
+            document.getElementById('edit-form-container').innerHTML = fields.map(f => `<div><label class="text-[10px] text-slate-500 uppercase">${f.label}</label><input type="${f.type}" id="${f.id}" value="${f.val}" class="w-full glass-input rounded-lg p-2 text-sm"></div>`).join('');
             document.getElementById('modal-edit').classList.remove('hidden');
         }
 
@@ -1071,8 +1067,6 @@
             if(!activeEdit) return;
             const { id, type } = activeEdit;
             const updates = {};
-            
-            // Collect updates based on what inputs exist
             if(document.getElementById('edit-date')) updates.date = document.getElementById('edit-date').value;
             if(document.getElementById('edit-amount')) updates.amount = Number(document.getElementById('edit-amount').value);
             if(document.getElementById('edit-remark')) type==='income' ? updates.remarks=document.getElementById('edit-remark').value : updates.name=document.getElementById('edit-remark').value;
@@ -1080,20 +1074,15 @@
             if(document.getElementById('edit-wage')) updates.wage = Number(document.getElementById('edit-wage').value);
 
             if(isGuest) {
-                // Update local arrays logic omitted for brevity, reload handles it usually
                 if(type === 'video') { const idx = videoData.findIndex(x=>x.id===id); if(idx>-1) Object.assign(videoData[idx], updates); }
                 else if(type === 'checkin') { const idx = timesheetData.findIndex(x=>x.id===id); if(idx>-1) Object.assign(timesheetData[idx], updates); }
                 else { const idx = recordsData.findIndex(x=>x.id===id); if(idx>-1) Object.assign(recordsData[idx], updates); }
                 saveGuestData();
             } else {
-                const col = type === 'video' ? 'videos' : (type === 'checkin' ? 'timesheets' : 'records'); // Note: timesheets col needs existence
-                // For this demo, checkin updates might not persist to remote if 'timesheets' collection logic isn't fully set up in init.
-                // Assuming 'records' and 'videos' work.
+                const col = type === 'video' ? 'videos' : (type === 'checkin' ? 'timesheets' : 'records');
                 if(type !== 'checkin') await updateDoc(doc(db, getPath(col), id), updates);
             }
-            
-            showToast("已更新");
-            closeModal('modal-edit');
+            showToast("已更新"); closeModal('modal-edit');
         };
         
         window.deleteCurrentRecord = async () => {
@@ -1105,48 +1094,52 @@
                 else recordsData = recordsData.filter(x=>x.id!==id);
                 saveGuestData();
             } else {
-                 const col = type === 'video' ? 'videos' : 'records'; // Checkin delete logic needs col
+                 const col = type === 'video' ? 'videos' : 'records';
                  if(type !== 'checkin') await deleteDoc(doc(db, getPath(col), id));
             }
-            showToast("已刪除");
-            closeModal('modal-edit');
+            showToast("已刪除"); closeModal('modal-edit');
         };
 
         // --- Settings & Utils ---
         window.saveSettings = async () => {
+            if (editingSettings) settings = editingSettings;
             settings.nickname = document.getElementById('settings-nickname').value;
-            const vStr = document.getElementById('settings-venues').value;
-            if(vStr) settings.venues = vStr.split(',').map(s=>s.trim());
-            const sStr = document.getElementById('settings-sources').value;
-            if(sStr) settings.sources = sStr.split(',').map(s=>s.trim());
-            
-            if(isGuest) {
-                saveGuestData();
-            } else {
-                await setDoc(doc(db, getPath('settings'), 'config'), settings, {merge:true});
-            }
-            updateUIForUser();
-            renderCustomSelectors(); // Refresh dropdowns
-            showToast("設定已儲存");
-            closeModal('modal-settings');
+            if(isGuest) saveGuestData();
+            else await setDoc(doc(db, getPath('settings'), 'config'), settings, {merge:true});
+            updateUIForUser(); renderCustomSelectors(); showToast("設定已儲存"); closeModal('modal-settings');
         };
+        
+        window.addSettingItem = (type) => {
+            const inputId = type === 'venues' ? 'new-venue-input' : 'new-source-input';
+            const input = document.getElementById(inputId);
+            const val = input.value.trim();
+            if(!val) return;
+            if(editingSettings[type].includes(val)) return showToast("已存在");
+            editingSettings[type].push(val);
+            input.value = '';
+            renderEditTags(type);
+        };
+        
+        window.removeSettingItem = (type, index) => { editingSettings[type].splice(index, 1); renderEditTags(type); };
+        
+        function renderEditTags(type) {
+            const containerId = type === 'venues' ? 'venues-list' : 'sources-list';
+            const list = editingSettings[type];
+            document.getElementById(containerId).innerHTML = list.map((item, i) => `<div class="tag-chip"><span>${item}</span><i class="fas fa-times cursor-pointer hover:text-white" onclick="removeSettingItem('${type}', ${i})"></i></div>`).join('');
+        }
 
         window.navTo = (target) => {
             document.querySelectorAll('.page-section').forEach(el => el.classList.add('hidden'));
             document.getElementById('page-' + target).classList.remove('hidden');
-            document.querySelectorAll('.nav-item').forEach(el => {
-                el.classList.remove('active', 'text-cyan-400');
-                el.classList.add('text-slate-500');
-            });
+            document.querySelectorAll('.nav-item').forEach(el => { el.classList.remove('active', 'text-cyan-400'); el.classList.add('text-slate-500'); });
             const btn = document.querySelector(`.nav-item[data-target="${target}"]`);
-            btn.classList.add('active', 'text-cyan-400');
-            btn.classList.remove('text-slate-500');
+            btn.classList.add('active', 'text-cyan-400'); btn.classList.remove('text-slate-500');
         };
 
         window.openSettingsModal = () => {
-             document.getElementById('settings-nickname').value = settings.nickname || '';
-             document.getElementById('settings-venues').value = settings.venues.join(', ');
-             document.getElementById('settings-sources').value = settings.sources.join(', ');
+             editingSettings = JSON.parse(JSON.stringify(settings));
+             document.getElementById('settings-nickname').value = editingSettings.nickname || '';
+             renderEditTags('venues'); renderEditTags('sources');
              document.getElementById('modal-settings').classList.remove('hidden');
         };
         window.openShareModal = () => document.getElementById('modal-share').classList.remove('hidden');
