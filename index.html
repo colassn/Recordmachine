@@ -537,30 +537,49 @@
     <div id="modal-share" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
         <div class="w-full max-w-md glass-panel p-6 rounded-2xl border border-slate-700">
             <h3 class="text-lg font-bold text-white mb-4">資料分享</h3>
-            <p class="text-xs text-slate-400 mb-5">輸入對方 Email 邀請查看您的資料。</p>
+            <p class="text-xs text-slate-400 mb-5">輸入對方 Email 邀請查看您的資料。請選擇允許對方查看的權限：</p>
             
             <input type="email" id="share-email" placeholder="對方 Email" class="w-full glass-input rounded-xl p-3 mb-5 text-sm">
             
-            <div class="space-y-3 mb-6">
-                <label class="flex items-center justify-between p-3 bg-slate-800/50 rounded-xl border border-slate-700 cursor-pointer hover:border-cyan-500/50 transition">
+            <div class="space-y-4 mb-8">
+                <!-- Toggle Item 1 -->
+                <div class="flex items-center justify-between p-3 bg-slate-800/50 rounded-xl border border-slate-700">
                     <span class="text-sm font-bold text-slate-300">允許查看記帳明細</span>
-                    <input type="checkbox" checked class="accent-cyan-500 w-4 h-4">
-                </label>
-                <label class="flex items-center justify-between p-3 bg-slate-800/50 rounded-xl border border-slate-700 cursor-pointer hover:border-cyan-500/50 transition">
+                    <label class="relative inline-flex items-center cursor-pointer">
+                        <input type="checkbox" id="share-toggle-records" class="sr-only peer toggle-checkbox" checked>
+                        <div class="w-11 h-6 bg-slate-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-cyan-600 toggle-label"></div>
+                    </label>
+                </div>
+                
+                <!-- Toggle Item 2 -->
+                <div class="flex items-center justify-between p-3 bg-slate-800/50 rounded-xl border border-slate-700">
                     <span class="text-sm font-bold text-slate-300">允許查看影片列表</span>
-                    <input type="checkbox" checked class="accent-cyan-500 w-4 h-4">
-                </label>
-                <label class="flex items-center justify-between p-3 bg-slate-800/50 rounded-xl border border-slate-700 cursor-pointer hover:border-cyan-500/50 transition">
+                    <label class="relative inline-flex items-center cursor-pointer">
+                        <input type="checkbox" id="share-toggle-videos" class="sr-only peer toggle-checkbox" checked>
+                        <div class="w-11 h-6 bg-slate-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-cyan-600 toggle-label"></div>
+                    </label>
+                </div>
+
+                <!-- Toggle Item 3 -->
+                <div class="flex items-center justify-between p-3 bg-slate-800/50 rounded-xl border border-slate-700">
                     <span class="text-sm font-bold text-slate-300">允許查看打卡記錄</span>
-                    <input type="checkbox" checked class="accent-cyan-500 w-4 h-4">
-                </label>
-                <label class="flex items-center justify-between p-3 bg-slate-800/50 rounded-xl border border-slate-700 cursor-pointer hover:border-cyan-500/50 transition">
+                    <label class="relative inline-flex items-center cursor-pointer">
+                        <input type="checkbox" id="share-toggle-checkin" class="sr-only peer toggle-checkbox" checked>
+                        <div class="w-11 h-6 bg-slate-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-cyan-600 toggle-label"></div>
+                    </label>
+                </div>
+
+                <!-- Toggle Item 4 -->
+                <div class="flex items-center justify-between p-3 bg-slate-800/50 rounded-xl border border-slate-700">
                     <span class="text-sm font-bold text-slate-300">允許查看結算報表</span>
-                    <input type="checkbox" checked class="accent-cyan-500 w-4 h-4">
-                </label>
+                    <label class="relative inline-flex items-center cursor-pointer">
+                        <input type="checkbox" id="share-toggle-settlement" class="sr-only peer toggle-checkbox" checked>
+                        <div class="w-11 h-6 bg-slate-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-cyan-600 toggle-label"></div>
+                    </label>
+                </div>
             </div>
 
-            <button type="button" onclick="sendShareInvite()" class="w-full bg-cyan-600 text-white font-bold py-3 rounded-xl shadow-lg">發送邀請</button>
+            <button type="button" onclick="saveSharingSettings()" class="w-full bg-cyan-600 text-white font-bold py-3 rounded-xl shadow-glow-cyan active:scale-95 transition">更新權限 / 發送邀請</button>
             <button type="button" onclick="closeModal('modal-share')" class="w-full text-slate-500 text-sm mt-3 hover:text-white">取消</button>
         </div>
     </div>
@@ -597,6 +616,7 @@
         let timesheetData = [];
         let financeChart = null;
         let settings = { nickname: '', venues: ['旺角中心', '現時點', '信和中心'], sources: ['淘寶', '本地批發', '日本代購'] };
+        let sharingSettings = { records: true, videos: true, checkin: true, settlement: true }; // Default sharing
         let editingSettings = null;
         let activeEdit = null;
 
@@ -657,7 +677,6 @@
             document.getElementById('display-username').innerText = currentUser.displayName || settings.nickname || "使用者";
             document.getElementById('display-email').innerText = currentUser.email;
             
-            // Update connection status display
             const badge = document.getElementById('db-status-badge');
             if(isGuest) {
                 badge.innerHTML = `<span class="w-1.5 h-1.5 rounded-full bg-yellow-500"></span> LOCAL ONLY`;
@@ -686,6 +705,7 @@
 
         async function initRealtimeListeners() {
             if(isGuest) return;
+            // Config Listener
             onSnapshot(doc(db, getPath('settings'), 'config'), (snap) => {
                 if(snap.exists()) {
                     const d = snap.data();
@@ -696,6 +716,13 @@
                 }
                 renderCustomSelectors();
             });
+            // Sharing Settings Listener
+            onSnapshot(doc(db, getPath('settings'), 'sharing'), (snap) => {
+                if(snap.exists()) {
+                    sharingSettings = snap.data();
+                }
+            });
+            
             onSnapshot(query(collection(db, getPath('records')), orderBy('date', 'desc')), (snap) => {
                 recordsData = snap.docs.map(d => ({id: d.id, ...d.data()}));
                 renderAll();
@@ -704,7 +731,6 @@
                 videoData = snap.docs.map(d => ({id: d.id, ...d.data()}));
                 renderAll();
             });
-            // Add Listener for Timesheets
             onSnapshot(query(collection(db, getPath('timesheets')), orderBy('createdAt', 'desc')), (snap) => {
                 timesheetData = snap.docs.map(d => ({id: d.id, ...d.data()}));
                 renderAll();
@@ -718,6 +744,9 @@
             timesheetData = JSON.parse(ls.getItem('guest_timesheets') || '[]');
             const s = JSON.parse(ls.getItem('guest_settings'));
             if(s) settings = s;
+            const sh = JSON.parse(ls.getItem('guest_sharing'));
+            if(sh) sharingSettings = sh;
+            
             renderCustomSelectors();
             renderAll();
         }
@@ -728,6 +757,7 @@
             ls.setItem('guest_videos', JSON.stringify(videoData));
             ls.setItem('guest_timesheets', JSON.stringify(timesheetData));
             ls.setItem('guest_settings', JSON.stringify(settings));
+            ls.setItem('guest_sharing', JSON.stringify(sharingSettings));
             renderAll();
         }
 
@@ -778,7 +808,6 @@
             document.getElementById(id + '-options').classList.remove('open');
         };
 
-        // Close select when clicking outside
         document.addEventListener('click', (e) => {
             if (!e.target.closest('.custom-select-wrapper')) {
                 document.querySelectorAll('.custom-select-options').forEach(el => el.classList.remove('open'));
@@ -1232,6 +1261,31 @@
             else await setDoc(doc(db, getPath('settings'), 'config'), settings, {merge:true});
             updateUIForUser(); renderCustomSelectors(); showToast("設定已儲存"); closeModal('modal-settings');
         };
+
+        window.saveSharingSettings = async () => {
+            // Read toggle states
+            const newSharing = {
+                records: document.getElementById('share-toggle-records').checked,
+                videos: document.getElementById('share-toggle-videos').checked,
+                checkin: document.getElementById('share-toggle-checkin').checked,
+                settlement: document.getElementById('share-toggle-settlement').checked
+            };
+            
+            sharingSettings = newSharing;
+
+            const email = document.getElementById('share-email').value;
+
+            if(isGuest) {
+                saveGuestData();
+                showToast("訪客模式權限已保存");
+            } else {
+                // Save to Firestore
+                await setDoc(doc(db, getPath('settings'), 'sharing'), sharingSettings, {merge:true});
+                if(email) showToast(`已發送邀請給 ${email}`);
+                else showToast("權限設定已更新");
+            }
+            closeModal('modal-share');
+        };
         
         window.addSettingItem = (type) => {
             const inputId = type === 'venues' ? 'new-venue-input' : 'new-source-input';
@@ -1266,7 +1320,17 @@
              renderEditTags('venues'); renderEditTags('sources');
              document.getElementById('modal-settings').classList.remove('hidden');
         };
-        window.openShareModal = () => document.getElementById('modal-share').classList.remove('hidden');
+
+        window.openShareModal = () => {
+            // Update toggles based on current sharingSettings state
+            document.getElementById('share-toggle-records').checked = sharingSettings.records !== false;
+            document.getElementById('share-toggle-videos').checked = sharingSettings.videos !== false;
+            document.getElementById('share-toggle-checkin').checked = sharingSettings.checkin !== false;
+            document.getElementById('share-toggle-settlement').checked = sharingSettings.settlement !== false;
+            
+            document.getElementById('modal-share').classList.remove('hidden');
+        };
+
         window.closeModal = (id) => document.getElementById(id).classList.add('hidden');
         window.showToast = (msg) => {
             const t = document.getElementById('toast');
@@ -1274,7 +1338,7 @@
             t.classList.remove('opacity-0', 'translate-y-4');
             setTimeout(() => t.classList.add('opacity-0', 'translate-y-4'), 3000);
         };
-        window.sendShareInvite = () => { showToast("已發送邀請"); closeModal('modal-share'); };
+        window.sendShareInvite = () => { saveSharingSettings(); };
 
         document.getElementById('income-date').valueAsDate = new Date();
         document.getElementById('stock-date').valueAsDate = new Date();
