@@ -4,19 +4,20 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>機械收支管理系統</title>
-    <!-- Theme: Modern Clean Dark (Critical Hotfix 3.5.0) -->
+    <!-- Theme: Modern Clean Dark (Interaction Hotfix 3.6.2) -->
     
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Sans+HK:wght@300;400;500;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
-    <!-- Safety Stubs -->
+    <!-- Safety Stubs: Prevents errors before main script loads -->
     <script>
         window.onerror = function(msg, url, line, col, error) {
             const t = document.getElementById('toast');
             if(t) {
                 document.getElementById('toast-msg').innerText = "系統錯誤: " + msg;
+                document.getElementById('toast-msg').classList.add('text-red-400');
                 t.classList.remove('opacity-0', 'translate-y-4');
             }
             console.error("Global Error:", msg, error);
@@ -178,7 +179,7 @@
                     <i class="fas fa-robot text-3xl text-white"></i>
                 </div>
                 <h1 class="text-2xl font-bold text-white tracking-tight mb-2">機械收支管理系統</h1>
-                <p class="text-slate-500 text-xs font-mono">VERSION 3.5.0</p>
+                <p class="text-slate-500 text-xs font-mono">VERSION 3.6.2</p>
             </div>
 
             <div id="auth-view-login" class="space-y-4">
@@ -413,6 +414,7 @@
         try { app = initializeApp(firebaseConfig); auth = getAuth(app); db = getFirestore(app); } 
         catch (e) { console.error("Init Error", e); }
         
+        // --- 1. DEFINE VARIABLES ---
         let currentUser = null, isGuest = false;
         let recordsData = [], videoData = [], timesheetData = [], sentInvitations = [], receivedInvitations = [];
         let financeChart = null;
@@ -421,7 +423,7 @@
         let editingSettings = null, activeEdit = null, workStart = null;
         let currentViewMode = 'mine', sharedTargetUid = null, activeInvitationId = null, unsubscribeSharedMonitor = null, unsubscribes = [];
 
-        // Define showToast first as it's used everywhere
+        // --- 2. DEFINE HELPER FUNCTIONS (Pure Logic) ---
         const showToast = (msg) => {
             const t = document.getElementById('toast');
             if(t) {
@@ -430,161 +432,125 @@
                 setTimeout(() => t.classList.add('opacity-0', 'translate-y-4'), 3000);
             }
         };
-        window.showToast = showToast; // Expose to window
 
-        // --- Helper Functions (Defined before usage) ---
-        const renderCustomSelectors = () => { createCustomSelect('venue-selector-container', 'income-venue', settings.venues, '選擇場地'); createCustomSelect('stock-source-selector-container', 'stock-source', settings.sources, '選擇來源'); };
-        
-        const createCustomSelect = (cId, iId, opts, ph) => { 
-            document.getElementById(cId).innerHTML = `<label class="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">${ph.replace('選擇','')}</label><div class="custom-select-wrapper mt-1.5"><div class="custom-select-trigger modern-input rounded-lg p-2.5 text-sm flex justify-between items-center" onclick="toggleSelect('${iId}')"><span id="${iId}-display">${opts[0]||ph}</span><i class="fas fa-chevron-down text-xs text-slate-500"></i></div><input type="hidden" id="${iId}" value="${opts[0]||''}"><div id="${iId}-options" class="custom-select-options">${opts.map(o=>`<div class="custom-option" onclick="selectOption('${iId}','${o}')">${o}</div>`).join('')}</div></div>`; 
-        };
-
-        window.toggleSelect = (id) => { 
-            const el=document.getElementById(id+'-options'); 
-            const open=el.classList.contains('open'); 
-            document.querySelectorAll('.custom-select-options').forEach(e=>e.classList.remove('open')); 
-            if(!open) el.classList.add('open'); 
-        };
-        
-        window.selectOption = (id,v) => { 
-            document.getElementById(id).value=v; 
-            document.getElementById(id+'-display').innerText=v; 
-            document.getElementById(id+'-options').classList.remove('open'); 
-        };
-
-        // ... (All other window assignments) ...
-        window.navTo = (t) => {
-            document.querySelectorAll('.page-section').forEach(e => e.classList.add('hidden'));
-            const targetPage = document.getElementById('page-' + t);
-            if (targetPage) targetPage.classList.remove('hidden');
-            document.querySelectorAll('.nav-item').forEach(e => { e.classList.remove('active', 'text-cyan-400'); e.classList.add('text-slate-500'); });
-            const activeBtn = document.querySelector(`.nav-item[data-target="${t}"]`);
-            if (activeBtn) activeBtn.classList.add('active', 'text-cyan-400');
-            if (t === 'settlement') updateSettlement();
-        };
-
-        window.toggleAuthView = (v) => {
-            document.getElementById(v==='register'?'auth-view-login':'auth-view-register').classList.add('hidden');
-            document.getElementById(v==='register'?'auth-view-register':'auth-view-login').classList.remove('hidden');
-        };
-
-        window.handleGoogleLogin = async () => { try { await signInWithPopup(auth, new GoogleAuthProvider()); } catch (e) { showToast("登入失敗: " + e.message); } };
-        window.handleEmailLogin = async () => { try { await signInWithEmailAndPassword(auth, document.getElementById('login-email').value, document.getElementById('login-pass').value); } catch(e){ showToast(e.message); } };
-        window.handleEmailRegister = async () => { try { await createUserWithEmailAndPassword(auth, document.getElementById('reg-email').value, document.getElementById('reg-pass').value); showToast("註冊成功"); } catch(e){ showToast(e.message); } };
-        window.handleGuestLogin = () => { isGuest = true; document.getElementById('auth-screen').classList.add('hidden'); document.getElementById('app-container').classList.remove('hidden'); currentUser = { uid: 'guest', displayName: 'Guest', email: 'guest@local' }; updateUIForUser(); loadGuestData(); };
-        window.handleLogout = async () => { if(!isGuest) await signOut(auth); location.reload(); };
-        window.closeModal = (id) => document.getElementById(id).classList.add('hidden');
-        window.openSettingsModal = () => { editingSettings = JSON.parse(JSON.stringify(settings)); document.getElementById('settings-nickname').value = editingSettings.nickname || ''; renderEditTags('venues'); renderEditTags('sources'); document.getElementById('modal-settings').classList.remove('hidden'); };
-        window.openShareModal = () => { document.getElementById('share-toggle-records').checked = sharingSettings.records !== false; document.getElementById('share-toggle-videos').checked = sharingSettings.videos !== false; document.getElementById('share-toggle-checkin').checked = sharingSettings.checkin !== false; document.getElementById('share-toggle-settlement').checked = sharingSettings.settlement !== false; document.getElementById('modal-share').classList.remove('hidden'); };
-        window.openNotifications = () => document.getElementById('modal-notif').classList.remove('hidden');
-
-        // Main Logic
-        if(auth) {
-            onAuthStateChanged(auth, (user) => {
-                if (user) {
-                    currentUser = user; isGuest = false;
-                    document.getElementById('auth-screen').classList.add('hidden');
-                    document.getElementById('app-container').classList.remove('hidden');
-                    updateUIForUser(); initRealtimeListeners(); initInvitationListeners();
-                }
-            });
-        }
-
-        function updateUIForUser() {
+        const updateUIForUser = () => {
             const nameEl = document.getElementById('display-username');
-            const emailEl = document.getElementById('display-email');
-            const badgeEl = document.getElementById('db-status-badge');
             if(nameEl) nameEl.innerText = currentUser.displayName || settings.nickname || "使用者";
+            const emailEl = document.getElementById('display-email');
             if(emailEl) emailEl.innerText = currentUser.email;
+            const badgeEl = document.getElementById('db-status-badge');
             if(badgeEl) {
                 if(!isGuest) badgeEl.innerHTML = `<span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span> ONLINE`;
                 else badgeEl.innerHTML = `<span class="w-1.5 h-1.5 rounded-full bg-yellow-500"></span> LOCAL`;
             }
-        }
+        };
 
-        function getPath(col) { 
+        const getPath = (col) => { 
             const targetUid = (currentViewMode === 'shared' && sharedTargetUid) ? sharedTargetUid : currentUser.uid;
             return `artifacts/${firebaseConfig.appId}/users/${targetUid}/${col}`; 
-        }
+        };
 
-        function initRealtimeListeners() {
-            if(isGuest) return;
-            unsubscribes.forEach(u => u()); unsubscribes = [];
-            if(currentViewMode === 'mine') {
-                unsubscribes.push(onSnapshot(doc(db, getPath('settings'), 'config'), (s) => { if(s.exists()) { const d=s.data(); if(d.nickname) settings.nickname=d.nickname; if(d.venues) settings.venues=d.venues; if(d.sources) settings.sources=d.sources; updateUIForUser(); renderCustomSelectors(); }}));
-                unsubscribes.push(onSnapshot(doc(db, getPath('settings'), 'sharing'), (s) => { if(s.exists()) sharingSettings=s.data(); }));
-                unsubscribes.push(onSnapshot(doc(db, getPath('system'), 'status'), (s) => { if(s.exists() && s.data().activeSessionStart) restoreSession(s.data().activeSessionStart); else resetClockUI(); }));
-            }
-            const onError = (err) => { console.error(err); if(err.code === 'permission-denied' && currentViewMode === 'shared') exitSharedMode("權限已被撤銷"); };
-            unsubscribes.push(onSnapshot(query(collection(db, getPath('records')), orderBy('date', 'desc')), (s) => { recordsData = s.docs.map(d=>({id:d.id,...d.data()})); renderAll(); }, onError));
-            unsubscribes.push(onSnapshot(query(collection(db, getPath('videos')), orderBy('date', 'desc')), (s) => { videoData = s.docs.map(d=>({id:d.id,...d.data()})); renderAll(); }, onError));
-            unsubscribes.push(onSnapshot(query(collection(db, getPath('timesheets')), orderBy('createdAt', 'desc')), (s) => { timesheetData = s.docs.map(d=>({id:d.id,...d.data()})); renderAll(); }, onError));
-        }
+        const createCustomSelect = (cId, iId, opts, ph) => { 
+            const container = document.getElementById(cId);
+            if(!container) return;
+            const currentVal = opts[0] || '';
+            container.innerHTML = `<label class="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">${ph.replace('選擇','')}</label><div class="custom-select-wrapper mt-1.5"><div class="custom-select-trigger modern-input rounded-lg p-2.5 text-sm flex justify-between items-center" onclick="toggleSelect('${iId}')"><span id="${iId}-display">${currentVal||ph}</span><i class="fas fa-chevron-down text-xs text-slate-500"></i></div><input type="hidden" id="${iId}" value="${currentVal}"><div id="${iId}-options" class="custom-select-options">${opts.map(o=>`<div class="custom-option" onclick="selectOption('${iId}','${o}')">${o}</div>`).join('')}</div></div>`; 
+        };
 
-        function initInvitationListeners() {
-            if(isGuest) return;
-            onSnapshot(query(collection(db, `artifacts/${firebaseConfig.appId}/public/data/invitations`), where('fromUid', '==', currentUser.uid)), (snap) => {
-                sentInvitations = snap.docs.map(d => ({id:d.id, ...d.data()})); renderSentInvites();
+        const renderCustomSelectors = () => { createCustomSelect('venue-selector-container', 'income-venue', settings.venues, '選擇場地'); createCustomSelect('stock-source-selector-container', 'stock-source', settings.sources, '選擇來源'); };
+
+        const renderEditTags = (t) => {
+            document.getElementById(t==='venues'?'venues-list':'sources-list').innerHTML = editingSettings[t].map((x,i) => 
+                `<div class="tag-chip"><span>${x}</span><i class="fas fa-times cursor-pointer hover:text-white" onclick="removeSettingItem('${t}',${i})"></i></div>`
+            ).join('');
+        };
+
+        const calculateAggregates = () => {
+            const now = new Date();
+            let m = 0;
+            recordsData.forEach(r => {
+                if (r.type === 'income' && new Date(r.date).getMonth() === now.getMonth()) {
+                    m += Number(r.amount);
+                }
             });
-            onSnapshot(query(collection(db, `artifacts/${firebaseConfig.appId}/public/data/invitations`), where('toEmail', '==', currentUser.email)), (snap) => {
-                receivedInvitations = snap.docs.map(d => ({id:d.id, ...d.data()})); updateNotifDot(); renderReceivedInvites();
-            });
-        }
-
-        // Sharing
-        window.sendInvite = async () => {
-            const email = document.getElementById('share-email').value; if(!email) return showToast("請輸入 Email");
-            try {
-                if(!sharingSettings) sharingSettings = { records: true, videos: true, checkin: true, settlement: true };
-                await addDoc(collection(db, `artifacts/${firebaseConfig.appId}/public/data/invitations`), {
-                    fromUid: currentUser.uid, fromName: settings.nickname || currentUser.email, toEmail: email, status: 'pending', permissions: sharingSettings, createdAt: new Date().toISOString()
-                });
-                showToast("邀請已發送"); document.getElementById('share-email').value = '';
-            } catch(e) { showToast("發送失敗: " + e.message); }
-        };
-        window.acceptInvite = async (id) => { await updateDoc(doc(db, `artifacts/${firebaseConfig.appId}/public/data/invitations`, id), { status: 'accepted' }); showToast("已接受"); };
-        window.rejectInvite = async (id) => { await deleteDoc(doc(db, `artifacts/${firebaseConfig.appId}/public/data/invitations`, id)); showToast("已刪除"); };
-        window.switchToSharedView = (targetUid, targetName, inviteId) => {
-            if(unsubscribeSharedMonitor) unsubscribeSharedMonitor();
-            unsubscribeSharedMonitor = onSnapshot(doc(db, `artifacts/${firebaseConfig.appId}/public/data/invitations`, inviteId), (snap) => {
-                if(!snap.exists() || snap.data().status !== 'accepted') exitSharedMode("權限已變更");
-            });
-            currentViewMode = 'shared'; sharedTargetUid = targetUid; activeInvitationId = inviteId;
-            document.getElementById('shared-mode-banner').classList.remove('hidden');
-            document.getElementById('display-username').innerText = `${targetName} (共享)`;
-            document.getElementById('main-header').classList.add('border-indigo-500');
-            document.querySelectorAll('.write-action').forEach(el => el.classList.add('hidden'));
-            closeModal('modal-notif');
-            initRealtimeListeners();
-            showToast(`已切換至 ${targetName}`);
-        };
-        window.switchToMyData = () => {
-            if(unsubscribeSharedMonitor) unsubscribeSharedMonitor();
-            currentViewMode = 'mine'; sharedTargetUid = null; activeInvitationId = null;
-            document.getElementById('shared-mode-banner').classList.add('hidden');
-            updateUIForUser();
-            document.getElementById('main-header').classList.remove('border-indigo-500');
-            document.querySelectorAll('.write-action').forEach(el => el.classList.remove('hidden'));
-            closeModal('modal-notif');
-            initRealtimeListeners();
-            showToast("已返回我的資料");
-        };
-        window.exitSharedMode = (reason) => { if(currentViewMode === 'mine') return; alert(reason || "已退出"); switchToMyData(); };
-        window.saveSharingSettings = async () => {
-            sharingSettings = {
-                records: document.getElementById('share-toggle-records').checked,
-                videos: document.getElementById('share-toggle-videos').checked,
-                checkin: document.getElementById('share-toggle-checkin').checked,
-                settlement: document.getElementById('share-toggle-settlement').checked
-            };
-            if(isGuest) { saveGuestData(); showToast("訪客設定已保存"); } 
-            else { await setDoc(doc(db, getPath('settings'), 'sharing'), sharingSettings, {merge:true}); showToast("權限已更新"); }
-            closeModal('modal-share');
+            const el = document.getElementById('projected-income');
+            if(el) el.innerText = '$' + m;
         };
 
-        // Renderers
-        function updateNotifDot() { const hasPending = receivedInvitations.some(i => i.status === 'pending'); document.getElementById('notif-dot').classList.toggle('active', hasPending); }
-        function renderReceivedInvites() {
+        const updateSettlement = () => {
+            let m = 0, s = 0, v = 0, w = 0;
+            recordsData.forEach(r => {
+                if (r.type === 'income') m += Number(r.amount);
+                else s += Number(r.amount);
+            });
+            videoData.forEach(i => v += Number(i.amount));
+            timesheetData.forEach(t => w += Number(t.wage));
+            const g = m + v + w;
+            
+            const elNet = document.getElementById('settle-net-income'); if(elNet) elNet.innerText = `$${g - s}`;
+            const elTotal = document.getElementById('settle-total-income'); if(elTotal) elTotal.innerText = `$${g}`;
+            const elMachine = document.getElementById('settle-machine-net'); if(elMachine) elMachine.innerText = `$${m}`;
+            const elStock = document.getElementById('settle-stock'); if(elStock) elStock.innerText = `$${s}`;
+            const elVideo = document.getElementById('settle-video'); if(elVideo) elVideo.innerText = `$${v}`;
+            const elWages = document.getElementById('settle-wages'); if(elWages) elWages.innerText = `$${w}`;
+
+            if(financeChart) financeChart.destroy();
+            const ctx = document.getElementById('financeChart').getContext('2d');
+            financeChart = new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['機台', '影片', '打卡', '入貨'],
+                    datasets: [{
+                        data: [m, v, w, s],
+                        backgroundColor: ['#3b82f6', '#8b5cf6', '#10b981', '#ef4444'],
+                        borderColor: '#1e293b',
+                        borderWidth: 2
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { position: 'bottom', labels: { color: '#94a3b8', font: {family: "'Noto Sans HK'"} } } }
+                }
+            });
+        };
+
+        const renderRecentRecords = () => {
+            const all = [...recordsData.map(r=>({...r, cat:'rec', time:new Date(r.date||r.createdAt).getTime()})), ...videoData.map(v=>({...v, cat:'vid', time:new Date(v.date||v.createdAt).getTime()})), ...timesheetData.map(t=>({...t, cat:'chk', time:new Date(t.start||t.createdAt).getTime()}))].sort((a,b)=>b.time-a.time).slice(0,10);
+            document.getElementById('recent-records-list').innerHTML = all.length ? all.map(i => {
+                let ic, col, ti, sub, amt, act;
+                if(i.cat==='rec') { const inc=i.type==='income'; ic=inc?'fa-gamepad':'fa-box'; col=inc?'text-blue-400':'text-red-400'; ti=inc?i.venue:i.name; sub=i.date; amt=(inc?'+':'-')+'$'+i.amount; act=`openEditRecord('${i.id}')`; }
+                else if(i.cat==='vid') { ic='fa-video'; col='text-purple-400'; ti=i.title; sub=new Date(i.date).toLocaleDateString(); amt='+$25'; act=`openEditVideo('${i.id}')`; }
+                else { ic='fa-clock'; col='text-green-400'; ti='打卡工資'; sub=new Date(i.start).toLocaleDateString(); amt='+$'+i.wage; act=`openEditCheckin('${i.id}')`; }
+                return `<div class="modern-card p-4 rounded-xl flex justify-between items-center mb-3 border border-white/5 relative z-20 cursor-pointer hover:bg-white/5 transition group" onclick="${act}"><div class="flex items-center gap-4"><div class="w-10 h-10 rounded-xl bg-white/5 ${col} flex items-center justify-center border border-white/5"><i class="fas ${ic}"></i></div><div><div class="font-bold text-slate-200 text-sm group-hover:text-white transition-colors">${ti}</div><div class="text-[10px] text-slate-500 font-mono mt-0.5">${sub}</div></div></div><div class="font-mono font-bold ${col} text-lg">${amt}</div></div>`;
+            }).join('') : '<div class="text-center text-slate-500 text-xs py-4">暫無活動</div>';
+        };
+
+        const renderFolderBlock = (t,k,recs,tot,col) => {
+            const tree={}; recs.forEach(r=>{if(!r.date)return; const[y,m]=r.date.split('-'); if(!tree[y])tree[y]={}; if(!tree[y][m])tree[y][m]=[]; tree[y][m].push(r);});
+            return `<div class="modern-card rounded-2xl overflow-hidden mb-4 border border-white/5"><div class="p-5 bg-white/5 font-bold text-white border-b border-white/5 flex justify-between items-center cursor-pointer hover:bg-white/10 transition" onclick="document.getElementById('f-${k}').classList.toggle('hidden')"><span class="flex items-center gap-3 text-lg"><i class="fas ${k==='income'?'fa-gamepad':'fa-box'} ${col}"></i> ${t}</span><span class="font-mono text-sm ${col} bg-black/30 px-3 py-1 rounded-lg border border-white/5">$${tot}</span></div><div id="f-${k}" class="hidden">${Object.keys(tree).sort((a,b)=>b-a).map(y=>`<div class="mb-2"><div class="p-3 bg-black/20 text-slate-400 border-b border-white/5 flex justify-between cursor-pointer hover:text-white transition" onclick="document.getElementById('y-${k}-${y}').classList.toggle('hidden')"><span class="text-xs font-bold tracking-wider ml-2">${y} 年</span><span class="font-mono text-xs">$${Object.values(tree[y]).flat().reduce((s,r)=>s+Number(r.amount),0)}</span></div><div id="y-${k}-${y}" class="hidden pl-2 border-l border-white/10 ml-4 my-2">${Object.keys(tree[y]).sort((a,b)=>b-a).map(m=>`<div class="p-2.5 border-b border-white/5 cursor-pointer group" onclick="document.getElementById('m-${k}-${y}-${m}').classList.toggle('hidden')"><div class="flex justify-between items-center"><span class="text-sm text-slate-300 group-hover:text-blue-400 transition-colors"><i class="fas fa-folder mr-2 text-yellow-500/80"></i>${m} 月</span><span class="font-mono text-xs ${col}">$${tree[y][m].reduce((s,r)=>s+Number(r.amount),0)}</span></div></div><div id="m-${k}-${y}-${m}" class="hidden bg-black/20 p-2 space-y-1 rounded-b-lg">${tree[y][m].map(i=>`<div class="flex justify-between p-2 rounded-lg hover:bg-white/5 text-xs cursor-pointer z-20 relative" onclick="openEditRecord('${i.id}')"><span class="text-slate-400">${i.date.slice(5)} ${k==='income'?i.venue:i.name}</span><span class="${col} font-mono">$${i.amount}</span></div>`).join('')}</div>`).join('')}</div></div>`).join('')}</div></div>`;
+        };
+
+        const renderDataTree = () => {
+            const c = document.getElementById('data-tree-container');
+            if(!recordsData.length) { c.innerHTML='<div class="text-center text-slate-500 mt-10">暫無數據</div>'; return; }
+            const inc = recordsData.filter(r=>r.type==='income'); const st = recordsData.filter(r=>r.type==='stock');
+            c.innerHTML = renderFolderBlock('機台收入','income',inc,inc.reduce((s,r)=>s+Number(r.amount),0),'text-blue-400') + renderFolderBlock('網上入貨','stock',st,st.reduce((s,r)=>s+Number(r.amount),0),'text-red-400');
+        };
+
+        const renderVideos = () => {
+            const list = document.getElementById('video-list');
+            if (videoData.length === 0) { list.innerHTML = '<div class="text-center text-slate-500 text-xs py-4">本月尚無影片</div>'; return; }
+            list.innerHTML = videoData.slice(0, 10).map(v => `<div class="modern-card p-4 rounded-xl flex justify-between items-center cursor-pointer border border-white/5 hover:border-purple-500/30 transition" onclick="openEditVideo('${v.id}')"><div class="flex items-center gap-3"><div class="bg-purple-500/10 text-purple-400 w-10 h-10 rounded-lg flex items-center justify-center text-lg"><i class="fas fa-play"></i></div><div><div class="font-bold text-slate-200 text-sm">${v.title}</div><div class="text-[10px] text-slate-500 font-mono">${v.date}</div></div></div><div class="text-purple-400 font-bold font-mono text-sm">+$25</div></div>`).join('');
+        };
+
+        const renderCheckins = () => {
+             const list = document.getElementById('checkin-list');
+             if (timesheetData.length === 0) { list.innerHTML = '<div class="text-center text-slate-500 text-xs py-2">無打卡記錄</div>'; return; }
+             list.innerHTML = timesheetData.slice().reverse().map(t => `<div class="flex justify-between items-center p-3 bg-white/5 rounded-lg border border-white/5 mb-2 cursor-pointer hover:bg-white/10" onclick="openEditCheckin('${t.id}')"><div class="flex flex-col"><span class="text-[10px] text-slate-400 font-bold uppercase font-mono">${new Date(t.start).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})} - ${new Date(t.end).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}</span><span class="text-[10px] text-slate-500">${new Date(t.start).toLocaleDateString()}</span></div><span class="font-bold text-green-400 font-mono text-sm">+$${t.wage}</span></div>`).join('');
+        };
+        
+        const renderReceivedInvites = () => {
             const list = document.getElementById('notif-list'); const userList = document.getElementById('shared-users-list');
             list.innerHTML = ''; userList.innerHTML = ''; let hasAccepted = false;
             receivedInvitations.forEach(inv => {
@@ -597,42 +563,139 @@
             });
             if(!receivedInvitations.length) list.innerHTML = '<div class="text-center text-slate-500 text-xs py-4">暫無通知</div>';
             document.getElementById('shared-view-selector').classList.toggle('hidden', !hasAccepted);
-        }
-        function renderSentInvites() {
+        };
+        
+        const renderSentInvites = () => {
             document.getElementById('sent-invites-list').innerHTML = sentInvitations.map(inv => `<div class="flex justify-between items-center p-3 bg-white/5 rounded-xl border border-white/5"><div><div class="text-xs text-white font-bold mb-1">${inv.toEmail}</div><div class="text-[10px] ${inv.status==='accepted'?'text-green-400':'text-yellow-400'} flex items-center gap-1"><span class="w-1.5 h-1.5 rounded-full ${inv.status==='accepted'?'bg-green-400':'bg-yellow-400'}"></span> ${inv.status==='accepted'?'已接受':'等待中'}</div></div><button onclick="rejectInvite('${inv.id}')" class="text-red-400 hover:text-red-300 text-xs border border-red-500/30 px-3 py-1.5 rounded-lg hover:bg-red-500/10 transition">撤銷</button></div>`).join('');
-        }
-        function renderRecentRecords() {
-            const all = [...recordsData.map(r=>({...r, cat:'rec', time:new Date(r.date||r.createdAt).getTime()})), ...videoData.map(v=>({...v, cat:'vid', time:new Date(v.date||v.createdAt).getTime()})), ...timesheetData.map(t=>({...t, cat:'chk', time:new Date(t.start||t.createdAt).getTime()}))].sort((a,b)=>b.time-a.time).slice(0,10);
-            document.getElementById('recent-records-list').innerHTML = all.length ? all.map(i => {
-                let ic, col, ti, sub, amt, act;
-                if(i.cat==='rec') { const inc=i.type==='income'; ic=inc?'fa-gamepad':'fa-box'; col=inc?'text-blue-400':'text-red-400'; ti=inc?i.venue:i.name; sub=i.date; amt=(inc?'+':'-')+'$'+i.amount; act=`openEditRecord('${i.id}')`; }
-                else if(i.cat==='vid') { ic='fa-video'; col='text-purple-400'; ti=i.title; sub=new Date(i.date).toLocaleDateString(); amt='+$25'; act=`openEditVideo('${i.id}')`; }
-                else { ic='fa-clock'; col='text-green-400'; ti='打卡工資'; sub=new Date(i.start).toLocaleDateString(); amt='+$'+i.wage; act=`openEditCheckin('${i.id}')`; }
-                return `<div class="modern-card p-4 rounded-xl flex justify-between items-center mb-3 border border-white/5 relative z-20 cursor-pointer hover:bg-white/5 transition group" onclick="${act}"><div class="flex items-center gap-4"><div class="w-10 h-10 rounded-xl bg-white/5 ${col} flex items-center justify-center border border-white/5"><i class="fas ${ic}"></i></div><div><div class="font-bold text-slate-200 text-sm group-hover:text-white transition-colors">${ti}</div><div class="text-[10px] text-slate-500 font-mono mt-0.5">${sub}</div></div></div><div class="font-mono font-bold ${col} text-lg">${amt}</div></div>`;
-            }).join('') : '<div class="text-center text-slate-500 text-xs py-4">暫無活動</div>';
-        }
-        function renderDataTree() {
-            const c = document.getElementById('data-tree-container');
-            if(!recordsData.length) { c.innerHTML='<div class="text-center text-slate-500 mt-10">暫無數據</div>'; return; }
-            const inc = recordsData.filter(r=>r.type==='income'); const st = recordsData.filter(r=>r.type==='stock');
-            c.innerHTML = renderFolderBlock('機台收入','income',inc,inc.reduce((s,r)=>s+Number(r.amount),0),'text-blue-400') + renderFolderBlock('網上入貨','stock',st,st.reduce((s,r)=>s+Number(r.amount),0),'text-red-400');
-        }
-        function renderFolderBlock(t,k,recs,tot,col) {
-            const tree={}; recs.forEach(r=>{if(!r.date)return; const[y,m]=r.date.split('-'); if(!tree[y])tree[y]={}; if(!tree[y][m])tree[y][m]=[]; tree[y][m].push(r);});
-            return `<div class="modern-card rounded-2xl overflow-hidden mb-4 border border-white/5"><div class="p-5 bg-white/5 font-bold text-white border-b border-white/5 flex justify-between items-center cursor-pointer hover:bg-white/10 transition" onclick="document.getElementById('f-${k}').classList.toggle('hidden')"><span class="flex items-center gap-3 text-lg"><i class="fas ${k==='income'?'fa-gamepad':'fa-box'} ${col}"></i> ${t}</span><span class="font-mono text-sm ${col} bg-black/30 px-3 py-1 rounded-lg border border-white/5">$${tot}</span></div><div id="f-${k}" class="hidden">${Object.keys(tree).sort((a,b)=>b-a).map(y=>`<div class="mb-2"><div class="p-3 bg-black/20 text-slate-400 border-b border-white/5 flex justify-between cursor-pointer hover:text-white transition" onclick="document.getElementById('y-${k}-${y}').classList.toggle('hidden')"><span class="text-xs font-bold tracking-wider ml-2">${y} 年</span><span class="font-mono text-xs">$${Object.values(tree[y]).flat().reduce((s,r)=>s+Number(r.amount),0)}</span></div><div id="y-${k}-${y}" class="hidden pl-2 border-l border-white/10 ml-4 my-2">${Object.keys(tree[y]).sort((a,b)=>b-a).map(m=>`<div class="p-2.5 border-b border-white/5 cursor-pointer group" onclick="document.getElementById('m-${k}-${y}-${m}').classList.toggle('hidden')"><div class="flex justify-between items-center"><span class="text-sm text-slate-300 group-hover:text-blue-400 transition-colors"><i class="fas fa-folder mr-2 text-yellow-500/80"></i>${m} 月</span><span class="font-mono text-xs ${col}">$${tree[y][m].reduce((s,r)=>s+Number(r.amount),0)}</span></div></div><div id="m-${k}-${y}-${m}" class="hidden bg-black/20 p-2 space-y-1 rounded-b-lg">${tree[y][m].map(i=>`<div class="flex justify-between p-2 rounded-lg hover:bg-white/5 text-xs cursor-pointer z-20 relative" onclick="openEditRecord('${i.id}')"><span class="text-slate-400">${i.date.slice(5)} ${k==='income'?i.venue:i.name}</span><span class="${col} font-mono">$${i.amount}</span></div>`).join('')}</div>`).join('')}</div></div>`).join('')}</div></div>`;
-        }
-        function renderVideos() {
-            const list = document.getElementById('video-list');
-            if (videoData.length === 0) { list.innerHTML = '<div class="text-center text-slate-500 text-xs py-4">本月尚無影片</div>'; return; }
-            list.innerHTML = videoData.slice(0, 10).map(v => `<div class="modern-card p-4 rounded-xl flex justify-between items-center cursor-pointer border border-white/5 hover:border-purple-500/30 transition" onclick="openEditVideo('${v.id}')"><div class="flex items-center gap-3"><div class="bg-purple-500/10 text-purple-400 w-10 h-10 rounded-lg flex items-center justify-center text-lg"><i class="fas fa-play"></i></div><div><div class="font-bold text-slate-200 text-sm">${v.title}</div><div class="text-[10px] text-slate-500 font-mono">${v.date}</div></div></div><div class="text-purple-400 font-bold font-mono text-sm">+$25</div></div>`).join('');
-        }
-        function renderCheckins() {
-             const list = document.getElementById('checkin-list');
-             if (timesheetData.length === 0) { list.innerHTML = '<div class="text-center text-slate-500 text-xs py-2">無打卡記錄</div>'; return; }
-             list.innerHTML = timesheetData.slice().reverse().map(t => `<div class="flex justify-between items-center p-3 bg-white/5 rounded-lg border border-white/5 mb-2 cursor-pointer hover:bg-white/10" onclick="openEditCheckin('${t.id}')"><div class="flex flex-col"><span class="text-[10px] text-slate-400 font-bold uppercase font-mono">${new Date(t.start).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})} - ${new Date(t.end).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}</span><span class="text-[10px] text-slate-500">${new Date(t.start).toLocaleDateString()}</span></div><span class="font-bold text-green-400 font-mono text-sm">+$${t.wage}</span></div>`).join('');
-        }
+        };
+        
+        const restoreSession = (iso) => {
+            workStart = new Date(iso);
+            document.getElementById('btn-clock-in').classList.add('opacity-50');
+            document.getElementById('btn-clock-in').disabled = true;
+            document.getElementById('btn-clock-out').classList.remove('cursor-not-allowed','bg-slate-700','text-slate-500');
+            document.getElementById('btn-clock-out').classList.add('bg-red-600','text-white');
+            document.getElementById('btn-clock-out').disabled = false;
+        };
 
-        // Standard Functions
+        const resetClockUI = () => {
+            workStart = null;
+            document.getElementById('btn-clock-in').classList.remove('opacity-50');
+            document.getElementById('btn-clock-in').disabled = false;
+            document.getElementById('btn-clock-out').classList.add('cursor-not-allowed','bg-slate-700','text-slate-500');
+            document.getElementById('btn-clock-out').classList.remove('bg-red-600','text-white');
+            document.getElementById('btn-clock-out').disabled = true;
+        };
+
+        const renderAll = () => {
+            renderRecentRecords(); renderDataTree(); renderVideos(); renderCheckins(); calculateAggregates(); updateSettlement();
+        };
+
+        const openEditModal = (id, type, data, fields) => { 
+            activeEdit = { id, type, data }; 
+            document.getElementById('edit-form-container').innerHTML = fields.map(f => `<div><label class="text-[10px] text-slate-500 uppercase">${f.label}</label><input type="${f.type}" id="${f.id}" value="${f.val}" class="w-full modern-input rounded-lg p-3 text-sm ${f.type==='number'?'font-mono':''}"></div>`).join(''); 
+            document.getElementById('modal-edit').classList.remove('hidden'); 
+        };
+        
+        const updateNotifDot = () => { const hasPending = receivedInvitations.some(i => i.status === 'pending'); document.getElementById('notif-dot').classList.toggle('active', hasPending); };
+
+        const saveGuestData = () => {
+            const ls = localStorage;
+            ls.setItem('guest_records', JSON.stringify(recordsData));
+            ls.setItem('guest_videos', JSON.stringify(videoData));
+            ls.setItem('guest_timesheets', JSON.stringify(timesheetData));
+            ls.setItem('guest_settings', JSON.stringify(settings));
+            renderAll();
+        };
+
+        const exitSharedMode = (reason) => { if(currentViewMode === 'mine') return; alert(reason || "已退出"); window.switchToMyData(); };
+
+        // --- 3. ASSIGN TO WINDOW (Safe Execution) ---
+        window.showToast = showToast;
+        window.toggleSelect = (id) => { const el=document.getElementById(id+'-options'); const open=el.classList.contains('open'); document.querySelectorAll('.custom-select-options').forEach(e=>e.classList.remove('open')); if(!open) el.classList.add('open'); };
+        window.selectOption = (id,v) => { document.getElementById(id).value=v; document.getElementById(id+'-display').innerText=v; document.getElementById(id+'-options').classList.remove('open'); };
+
+        window.navTo = (t) => {
+            document.querySelectorAll('.page-section').forEach(e => e.classList.add('hidden'));
+            const targetPage = document.getElementById('page-' + t);
+            if (targetPage) targetPage.classList.remove('hidden');
+            document.querySelectorAll('.nav-item').forEach(e => { e.classList.remove('active', 'text-cyan-400'); e.classList.add('text-slate-500'); });
+            const activeBtn = document.querySelector(`.nav-item[data-target="${t}"]`);
+            if (activeBtn) activeBtn.classList.add('active', 'text-cyan-400');
+            if (t === 'settlement') updateSettlement();
+        };
+
+        window.toggleAuthView = (v) => { document.getElementById(v==='register'?'auth-view-login':'auth-view-register').classList.add('hidden'); document.getElementById(v==='register'?'auth-view-register':'auth-view-login').classList.remove('hidden'); };
+        window.handleGoogleLogin = async () => { try { await signInWithPopup(auth, new GoogleAuthProvider()); } catch (e) { window.showToast("登入失敗: " + e.message); } };
+        window.handleEmailLogin = async () => { try { await signInWithEmailAndPassword(auth, document.getElementById('login-email').value, document.getElementById('login-pass').value); } catch(e){ window.showToast(e.message); } };
+        window.handleEmailRegister = async () => { try { await createUserWithEmailAndPassword(auth, document.getElementById('reg-email').value, document.getElementById('reg-pass').value); window.showToast("註冊成功"); } catch(e){ window.showToast(e.message); } };
+        
+        window.handleGuestLogin = () => { 
+            isGuest = true; 
+            document.getElementById('auth-screen').classList.add('hidden'); 
+            document.getElementById('app-container').classList.remove('hidden'); 
+            currentUser = { uid: 'guest', displayName: 'Guest', email: 'guest@local' }; 
+            updateUIForUser(); 
+            loadGuestData(); 
+        };
+        
+        window.handleLogout = async () => { if(!isGuest) await signOut(auth); location.reload(); };
+        window.closeModal = (id) => document.getElementById(id).classList.add('hidden');
+        window.openSettingsModal = () => { editingSettings = JSON.parse(JSON.stringify(settings)); document.getElementById('settings-nickname').value = editingSettings.nickname || ''; renderEditTags('venues'); renderEditTags('sources'); document.getElementById('modal-settings').classList.remove('hidden'); };
+        window.openShareModal = () => { document.getElementById('share-toggle-records').checked = sharingSettings.records !== false; document.getElementById('share-toggle-videos').checked = sharingSettings.videos !== false; document.getElementById('share-toggle-checkin').checked = sharingSettings.checkin !== false; document.getElementById('share-toggle-settlement').checked = sharingSettings.settlement !== false; document.getElementById('modal-share').classList.remove('hidden'); };
+        window.openNotifications = () => document.getElementById('modal-notif').classList.remove('hidden');
+
+        window.saveSharingSettings = async () => {
+            sharingSettings = {
+                records: document.getElementById('share-toggle-records').checked,
+                videos: document.getElementById('share-toggle-videos').checked,
+                checkin: document.getElementById('share-toggle-checkin').checked,
+                settlement: document.getElementById('share-toggle-settlement').checked
+            };
+            if(isGuest) { saveGuestData(); window.showToast("訪客設定已保存"); } 
+            else { await setDoc(doc(db, getPath('settings'), 'sharing'), sharingSettings, {merge:true}); window.showToast("權限已更新"); }
+            window.closeModal('modal-share');
+        };
+        window.addSettingItem=(t)=>{const i=document.getElementById(t==='venues'?'new-venue-input':'new-source-input');if(i.value){editingSettings[t].push(i.value);i.value='';renderEditTags(t);}};
+        window.removeSettingItem=(t,ix)=>{editingSettings[t].splice(ix,1);renderEditTags(t);};
+        window.saveSettings=async()=>{settings=editingSettings;if(isGuest)saveGuestData();else await setDoc(doc(db,getPath('settings'),'config'),settings,{merge:true});updateUIForUser();renderCustomSelectors();window.closeModal('modal-settings');};
+        window.switchInputMode=(m)=>{const bg=document.getElementById('toggle-bg'); if(m==='income'){bg.style.transform='translateX(0)';document.getElementById('form-income').classList.remove('hidden');document.getElementById('form-stock').classList.add('hidden');}else{bg.style.transform='translateX(100%)';document.getElementById('form-income').classList.add('hidden');document.getElementById('form-stock').classList.remove('hidden');}};
+        window.toggleMachineType=()=>{const t=document.querySelector('input[name="machineType"]:checked').value;document.getElementById('standard-amount-input').classList.toggle('hidden',t!=='standard');document.getElementById('mini-amount-input').classList.toggle('hidden',t!=='mini');window.calculateTotalIncome();};
+        window.calculateTotalIncome=()=>{const t=document.querySelector('input[name="machineType"]:checked').value;let tot=t==='standard'?(Number(document.getElementById('income-amount').value)||0):((Number(document.getElementById('income-top').value)||0)+(Number(document.getElementById('income-bottom').value)||0));document.getElementById('income-display-total').innerText='$'+tot;return tot;};
+        
+        window.saveRecord = async (type) => {
+            const data = { type, createdAt: new Date().toISOString() };
+            if(type==='income') { data.date=document.getElementById('income-date').value; data.venue=document.getElementById('income-venue').value; data.machineType=document.querySelector('input[name="machineType"]:checked').value; data.amount=Number(document.getElementById('income-display-total').innerText.replace('$','')); data.remarks=document.getElementById('income-remarks').value; if(!data.date||!data.venue) return window.showToast("資料不完整"); }
+            else { data.date=document.getElementById('stock-date').value; data.source=document.getElementById('stock-source').value; data.name=document.getElementById('stock-name').value; data.qty=Number(document.getElementById('stock-qty').value); data.amount=Number(document.getElementById('stock-cost').value); if(!data.date||!data.source) return window.showToast("資料不完整"); }
+            if(isGuest) { data.id='guest_'+Date.now(); recordsData.unshift(data); saveGuestData(); }
+            else await addDoc(collection(db, getPath('records')), data);
+            window.showToast("已儲存");
+            if(type==='income') { document.getElementById('income-amount').value=''; document.getElementById('income-top').value=''; document.getElementById('income-bottom').value=''; document.getElementById('income-display-total').innerText='$0'; }
+            else document.getElementById('stock-cost').value='';
+        };
+
+        window.openEditRecord = (id) => { const r = recordsData.find(x => x.id === id); if(!r) return; openEditModal(id, r.type, r, [ { id: 'edit-date', label: '日期', type: 'date', val: r.date }, { id: 'edit-amount', label: '金額', type: 'number', val: r.amount }, { id: 'edit-remark', label: '備註/名稱', type: 'text', val: r.remarks || r.name } ]); };
+        window.openEditVideo = (id) => { const v = videoData.find(x => x.id === id); if(!v) return; activeEdit = { id, type: 'video', data: v }; document.getElementById('edit-form-container').innerHTML = `<div><label class="text-[10px] text-slate-500 uppercase">標題</label><input type="text" id="edit-title" value="${v.title}" class="w-full modern-input rounded-lg p-3 text-sm"></div><div><label class="text-[10px] text-slate-500 uppercase">日期</label><input type="date" id="edit-date" value="${v.date}" class="w-full modern-input rounded-lg p-3 text-sm"></div>`; document.getElementById('modal-edit').classList.remove('hidden'); };
+        window.openEditCheckin = (id) => { const t = timesheetData.find(x => x.id === id); if(!t) return; activeEdit = { id, type: 'checkin', data: t }; document.getElementById('edit-form-container').innerHTML = `<div><label class="text-[10px] text-slate-500 uppercase">工資 ($)</label><input type="number" id="edit-wage" value="${t.wage}" class="w-full modern-input rounded-lg p-3 text-sm font-mono"></div>`; document.getElementById('modal-edit').classList.remove('hidden'); };
+        window.updateCurrentRecord = async () => { if(!activeEdit) return; const { id, type } = activeEdit; const updates = {}; const mapping = { 'edit-date': 'date', 'edit-amount': 'amount', 'edit-remark': (type==='income'?'remarks':'name'), 'edit-title': 'title', 'edit-wage': 'wage' }; for (const [eid, field] of Object.entries(mapping)) { if(document.getElementById(eid)) updates[field] = (field==='amount'||field==='wage') ? Number(document.getElementById(eid).value) : document.getElementById(eid).value; } if(isGuest) { if(type === 'video') { const idx = videoData.findIndex(x=>x.id===id); if(idx>-1) Object.assign(videoData[idx], updates); } else if(type === 'checkin') { const idx = timesheetData.findIndex(x=>x.id===id); if(idx>-1) Object.assign(timesheetData[idx], updates); } else { const idx = recordsData.findIndex(x=>x.id===id); if(idx>-1) Object.assign(recordsData[idx], updates); } saveGuestData(); } else { const col = type === 'video' ? 'videos' : (type === 'checkin' ? 'timesheets' : 'records'); await updateDoc(doc(db, getPath(col), id), updates); } window.showToast("已更新"); closeModal('modal-edit'); };
+        window.deleteCurrentRecord = async () => { if(!activeEdit) return; const { id, type } = activeEdit; if(isGuest) { if(type === 'video') videoData = videoData.filter(x=>x.id!==id); else if(type === 'checkin') timesheetData = timesheetData.filter(x=>x.id!==id); else recordsData = recordsData.filter(x=>x.id!==id); saveGuestData(); } else { const col = type === 'video' ? 'videos' : (type === 'checkin' ? 'timesheets' : 'records'); await deleteDoc(doc(db, getPath(col), id)); } window.showToast("已刪除"); closeModal('modal-edit'); };
+        
+        window.saveVideoRecord = async () => {
+            const title = document.getElementById('video-title').value; const date = document.getElementById('video-date').value;
+            if(!title || !date) return window.showToast("請填寫完整");
+            const data = { title, date, amount: 25, type: 'video', createdAt: new Date().toISOString() };
+            if(isGuest) { data.id='vid_'+Date.now(); videoData.unshift(data); saveGuestData(); } 
+            else await addDoc(collection(db, getPath('videos')), data);
+            window.showToast("已新增"); document.getElementById('video-title').value = '';
+        };
+
+        window.clockIn=async()=>{const n=new Date().toISOString();restoreSession(n);if(isGuest)localStorage.setItem('guest_active_session',n);else await setDoc(doc(db,getPath('system'),'status'),{activeSessionStart:n},{merge:true});window.showToast("上班");};
+        window.clockOut=async()=>{if(!workStart)return;const e=new Date();const m=(e-workStart)/1000/60;const w=Math.round(m/30)*25;const r={type:'checkin',start:workStart.toISOString(),end:e.toISOString(),wage:w,createdAt:e.toISOString()};if(isGuest){timesheetData.push({...r,id:'s'+Date.now()});localStorage.removeItem('guest_active_session');saveGuestData();}else{await addDoc(collection(db,getPath('timesheets')),r);await updateDoc(doc(db,getPath('system'),'status'),{activeSessionStart:null});}resetClockUI();window.showToast(`下班 (+$${w})`);renderCheckins();updateSettlement();};
+        
+        window.switchToMyData = () => { if(unsubscribeSharedMonitor) unsubscribeSharedMonitor(); currentViewMode = 'mine'; sharedTargetUid = null; activeInvitationId = null; document.getElementById('shared-mode-banner').classList.add('hidden'); updateUIForUser(); document.getElementById('main-header').classList.remove('border-indigo-500'); document.querySelectorAll('.write-action').forEach(el => el.classList.remove('hidden')); window.closeModal('modal-notif'); initRealtimeListeners(); window.showToast("已返回我的資料"); };
+        window.switchToSharedView = (targetUid, targetName, inviteId) => { if(unsubscribeSharedMonitor) unsubscribeSharedMonitor(); unsubscribeSharedMonitor = onSnapshot(doc(db, `artifacts/${firebaseConfig.appId}/public/data/invitations`, inviteId), (snap) => { if(!snap.exists() || snap.data().status !== 'accepted') exitSharedMode("權限已變更"); }); currentViewMode = 'shared'; sharedTargetUid = targetUid; activeInvitationId = inviteId; document.getElementById('shared-mode-banner').classList.remove('hidden'); document.getElementById('display-username').innerText = `${targetName} (共享)`; document.getElementById('main-header').classList.add('border-indigo-500'); document.querySelectorAll('.write-action').forEach(el => el.classList.add('hidden')); window.closeModal('modal-notif'); initRealtimeListeners(); window.showToast(`已切換至 ${targetName}`); };
+        window.exitSharedMode = exitSharedMode;
+        
         function loadGuestData() {
             const ls = localStorage;
             recordsData = JSON.parse(ls.getItem('guest_records') || '[]');
@@ -642,48 +705,10 @@
             if(ls.getItem('guest_active_session')) restoreSession(ls.getItem('guest_active_session'));
             renderCustomSelectors(); renderAll();
         }
-        function saveGuestData() {
-            const ls = localStorage;
-            ls.setItem('guest_records', JSON.stringify(recordsData));
-            ls.setItem('guest_videos', JSON.stringify(videoData));
-            ls.setItem('guest_timesheets', JSON.stringify(timesheetData));
-            ls.setItem('guest_settings', JSON.stringify(settings));
-            renderAll();
-        }
-        function renderAll() { renderRecentRecords(); renderDataTree(); renderVideos(); renderCheckins(); calculateAggregates(); updateSettlement(); }
 
-        window.switchInputMode=(m)=>{const bg=document.getElementById('toggle-bg'); if(m==='income'){bg.style.transform='translateX(0)';document.getElementById('form-income').classList.remove('hidden');document.getElementById('form-stock').classList.add('hidden');}else{bg.style.transform='translateX(100%)';document.getElementById('form-income').classList.add('hidden');document.getElementById('form-stock').classList.remove('hidden');}};
-        window.toggleMachineType=()=>{const t=document.querySelector('input[name="machineType"]:checked').value;document.getElementById('standard-amount-input').classList.toggle('hidden',t!=='standard');document.getElementById('mini-amount-input').classList.toggle('hidden',t!=='mini');window.calculateTotalIncome();};
-        window.calculateTotalIncome=()=>{const t=document.querySelector('input[name="machineType"]:checked').value;let tot=t==='standard'?(Number(document.getElementById('income-amount').value)||0):((Number(document.getElementById('income-top').value)||0)+(Number(document.getElementById('income-bottom').value)||0));document.getElementById('income-display-total').innerText='$'+tot;return tot;};
-        window.saveRecord = async (type) => {
-            const data = { type, createdAt: new Date().toISOString() };
-            if(type==='income') { data.date=document.getElementById('income-date').value; data.venue=document.getElementById('income-venue').value; data.machineType=document.querySelector('input[name="machineType"]:checked').value; data.amount=Number(document.getElementById('income-display-total').innerText.replace('$','')); data.remarks=document.getElementById('income-remarks').value; if(!data.date||!data.venue) return showToast("資料不完整"); }
-            else { data.date=document.getElementById('stock-date').value; data.source=document.getElementById('stock-source').value; data.name=document.getElementById('stock-name').value; data.qty=Number(document.getElementById('stock-qty').value); data.amount=Number(document.getElementById('stock-cost').value); if(!data.date||!data.source) return showToast("資料不完整"); }
-            if(isGuest) { data.id='guest_'+Date.now(); recordsData.unshift(data); saveGuestData(); }
-            else await addDoc(collection(db, getPath('records')), data);
-            showToast("已儲存");
-            if(type==='income') { document.getElementById('income-amount').value=''; document.getElementById('income-top').value=''; document.getElementById('income-bottom').value=''; document.getElementById('income-display-total').innerText='$0'; }
-            else document.getElementById('stock-cost').value='';
-        };
-
-        window.openEditRecord = (id) => { const r = recordsData.find(x => x.id === id); if(!r) return; openEditModal(id, r.type, r, [ { id: 'edit-date', label: '日期', type: 'date', val: r.date }, { id: 'edit-amount', label: '金額', type: 'number', val: r.amount }, { id: 'edit-remark', label: '備註/名稱', type: 'text', val: r.remarks || r.name } ]); };
-        window.openEditVideo = (id) => { const v = videoData.find(x => x.id === id); if(!v) return; activeEdit = { id, type: 'video', data: v }; document.getElementById('edit-form-container').innerHTML = `<div><label class="text-[10px] text-slate-500 uppercase">標題</label><input type="text" id="edit-title" value="${v.title}" class="w-full modern-input rounded-lg p-3 text-sm"></div><div><label class="text-[10px] text-slate-500 uppercase">日期</label><input type="date" id="edit-date" value="${v.date}" class="w-full modern-input rounded-lg p-3 text-sm"></div>`; document.getElementById('modal-edit').classList.remove('hidden'); };
-        window.openEditCheckin = (id) => { const t = timesheetData.find(x => x.id === id); if(!t) return; activeEdit = { id, type: 'checkin', data: t }; document.getElementById('edit-form-container').innerHTML = `<div><label class="text-[10px] text-slate-500 uppercase">工資 ($)</label><input type="number" id="edit-wage" value="${t.wage}" class="w-full modern-input rounded-lg p-3 text-sm font-mono"></div>`; document.getElementById('modal-edit').classList.remove('hidden'); };
-        function openEditModal(id, type, data, fields) { activeEdit = { id, type, data }; document.getElementById('edit-form-container').innerHTML = fields.map(f => `<div><label class="text-[10px] text-slate-500 uppercase">${f.label}</label><input type="${f.type}" id="${f.id}" value="${f.val}" class="w-full modern-input rounded-lg p-3 text-sm ${f.type==='number'?'font-mono':''}"></div>`).join(''); document.getElementById('modal-edit').classList.remove('hidden'); }
-        window.updateCurrentRecord = async () => { if(!activeEdit) return; const { id, type } = activeEdit; const updates = {}; const mapping = { 'edit-date': 'date', 'edit-amount': 'amount', 'edit-remark': (type==='income'?'remarks':'name'), 'edit-title': 'title', 'edit-wage': 'wage' }; for (const [eid, field] of Object.entries(mapping)) { if(document.getElementById(eid)) updates[field] = (field==='amount'||field==='wage') ? Number(document.getElementById(eid).value) : document.getElementById(eid).value; } if(isGuest) { if(type === 'video') { const idx = videoData.findIndex(x=>x.id===id); if(idx>-1) Object.assign(videoData[idx], updates); } else if(type === 'checkin') { const idx = timesheetData.findIndex(x=>x.id===id); if(idx>-1) Object.assign(timesheetData[idx], updates); } else { const idx = recordsData.findIndex(x=>x.id===id); if(idx>-1) Object.assign(recordsData[idx], updates); } saveGuestData(); } else { const col = type === 'video' ? 'videos' : (type === 'checkin' ? 'timesheets' : 'records'); await updateDoc(doc(db, getPath(col), id), updates); } showToast("已更新"); closeModal('modal-edit'); };
-        window.deleteCurrentRecord = async () => { if(!activeEdit) return; const { id, type } = activeEdit; if(isGuest) { if(type === 'video') videoData = videoData.filter(x=>x.id!==id); else if(type === 'checkin') timesheetData = timesheetData.filter(x=>x.id!==id); else recordsData = recordsData.filter(x=>x.id!==id); saveGuestData(); } else { const col = type === 'video' ? 'videos' : (type === 'checkin' ? 'timesheets' : 'records'); await deleteDoc(doc(db, getPath(col), id)); } showToast("已刪除"); closeModal('modal-edit'); };
-        window.addSettingItem=(t)=>{const i=document.getElementById(t==='venues'?'new-venue-input':'new-source-input');if(i.value){editingSettings[t].push(i.value);i.value='';renderEditTags(t);}};
-        window.removeSettingItem=(t,ix)=>{editingSettings[t].splice(ix,1);renderEditTags(t);};
-        function renderEditTags(t){document.getElementById(t==='venues'?'venues-list':'sources-list').innerHTML=editingSettings[t].map((x,i)=>`<div class="tag-chip"><span>${x}</span><i class="fas fa-times cursor-pointer hover:text-white" onclick="removeSettingItem('${t}',${i})"></i></div>`).join('');}
-        window.saveSettings=async()=>{settings=editingSettings;if(isGuest)saveGuestData();else await setDoc(doc(db,getPath('settings'),'config'),settings,{merge:true});updateUIForUser();renderCustomSelectors();closeModal('modal-settings');};
-
+        // Listeners
+        document.addEventListener('click', e => { if(!e.target.closest('.custom-select-wrapper')) document.querySelectorAll('.custom-select-options').forEach(el=>el.classList.remove('open')); });
         setInterval(()=>{const now=new Date();document.getElementById('clock-time').innerText=now.toLocaleTimeString('en-GB',{hour12:false});document.getElementById('clock-date').innerText=now.toLocaleDateString('en-GB',{weekday:'short',year:'numeric',month:'short',day:'numeric'});},1000);
-        function restoreSession(iso){workStart=new Date(iso);document.getElementById('btn-clock-in').classList.add('opacity-50');document.getElementById('btn-clock-in').disabled=true;document.getElementById('btn-clock-out').classList.remove('cursor-not-allowed','bg-slate-700','text-slate-500');document.getElementById('btn-clock-out').classList.add('bg-red-600','text-white');document.getElementById('btn-clock-out').disabled=false;}
-        function resetClockUI(){workStart=null;document.getElementById('btn-clock-in').classList.remove('opacity-50');document.getElementById('btn-clock-in').disabled=false;document.getElementById('btn-clock-out').classList.add('cursor-not-allowed','bg-slate-700','text-slate-500');document.getElementById('btn-clock-out').classList.remove('bg-red-600','text-white');document.getElementById('btn-clock-out').disabled=true;}
-        window.clockIn=async()=>{const n=new Date().toISOString();restoreSession(n);if(isGuest)localStorage.setItem('guest_active_session',n);else await setDoc(doc(db,getPath('system'),'status'),{activeSessionStart:n},{merge:true});showToast("上班");};
-        window.clockOut=async()=>{if(!workStart)return;const e=new Date();const m=(e-workStart)/1000/60;const w=Math.round(m/30)*25;const r={type:'checkin',start:workStart.toISOString(),end:e.toISOString(),wage:w,createdAt:e.toISOString()};if(isGuest){timesheetData.push({...r,id:'s'+Date.now()});localStorage.removeItem('guest_active_session');saveGuestData();}else{await addDoc(collection(db,getPath('timesheets')),r);await updateDoc(doc(db,getPath('system'),'status'),{activeSessionStart:null});}resetClockUI();showToast(`下班 (+$${w})`);renderCheckins();updateSettlement();};
-        function calculateAggregates(){const now=new Date();let m=0;recordsData.forEach(r=>{if(r.type==='income'&&new Date(r.date).getMonth()===now.getMonth())m+=Number(r.amount)});document.getElementById('projected-income').innerText='$'+m;}
-        function updateSettlement(){let m=0,s=0,v=0,w=0;recordsData.forEach(r=>{if(r.type==='income')m+=Number(r.amount);else s+=Number(r.amount)});videoData.forEach(i=>v+=Number(i.amount));timesheetData.forEach(t=>w+=Number(t.wage));const g=m+v+w;document.getElementById('settle-net-income').innerText=`$${g-s}`;document.getElementById('settle-total-income').innerText=`$${g}`;document.getElementById('settle-machine-net').innerText=`$${m}`;document.getElementById('settle-stock').innerText=`$${s}`;document.getElementById('settle-video').innerText=`$${v}`;document.getElementById('settle-wages').innerText=`$${w}`;if(financeChart)financeChart.destroy();financeChart=new Chart(document.getElementById('financeChart').getContext('2d'),{type:'doughnut',data:{labels:['機台','影片','打卡','入貨'],datasets:[{data:[m,v,w,s],backgroundColor:['#3b82f6','#8b5cf6','#10b981','#ef4444'],borderColor:'#1e293b',borderWidth:2}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom',labels:{color:'#94a3b8',font:{family:"'Noto Sans HK'"}}}}}});}
 
         document.getElementById('income-date').valueAsDate=new Date();document.getElementById('stock-date').valueAsDate=new Date();document.getElementById('video-date').valueAsDate=new Date();
     </script>
