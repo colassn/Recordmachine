@@ -4,15 +4,16 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>機械收支管理系統</title>
-    <!-- Theme: Modern Clean Dark (Interaction Hotfix 3.6.2) -->
+    <!-- Theme: Modern Clean Dark (Login Hotfix 3.6.3) -->
     
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Sans+HK:wght@300;400;500;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
-    <!-- Safety Stubs: Prevents errors before main script loads -->
+    <!-- Safety Stubs & Error Handling -->
     <script>
+        // Global Error Handler
         window.onerror = function(msg, url, line, col, error) {
             const t = document.getElementById('toast');
             if(t) {
@@ -21,18 +22,15 @@
                 t.classList.remove('opacity-0', 'translate-y-4');
             }
             console.error("Global Error:", msg, error);
-            return false;
+            return false; // Let default handler run too
         };
 
+        // Safety Stubs - defined immediately
         function stubWarn() { 
-            const t = document.getElementById('toast');
-            if(t) {
-                document.getElementById('toast-msg').innerText = "系統正在啟動中，請稍候...";
-                t.classList.remove('opacity-0', 'translate-y-4');
-                setTimeout(() => t.classList.add('opacity-0', 'translate-y-4'), 3000);
-            }
+            alert("系統正在初始化中，請稍等約 3-5 秒...\n如果持續無法登入，請檢查網路連線。");
         }
         
+        // List of functions to stub
         const allFns = [
             'handleGoogleLogin','handleEmailLogin','handleEmailRegister','handleGuestLogin','handleLogout',
             'saveRecord','saveVideoRecord','clockIn','clockOut','sendInvite', 
@@ -43,7 +41,10 @@
             'deleteCurrentRecord', 'switchToMyData', 'exitSharedMode', 'selectOption', 'toggleSelect',
             'acceptInvite', 'rejectInvite', 'switchToSharedView'
         ];
-        allFns.forEach(f => window[f] = stubWarn);
+        // Apply stubs
+        allFns.forEach(f => {
+            if (!window[f]) window[f] = stubWarn;
+        });
     </script>
 
     <script>
@@ -179,11 +180,12 @@
                     <i class="fas fa-robot text-3xl text-white"></i>
                 </div>
                 <h1 class="text-2xl font-bold text-white tracking-tight mb-2">機械收支管理系統</h1>
-                <p class="text-slate-500 text-xs font-mono">VERSION 3.6.2</p>
+                <p class="text-slate-500 text-xs font-mono">VERSION 3.6.3</p>
+                <p id="init-status" class="text-xs text-blue-400 mt-2 animate-pulse">系統初始化中...</p>
             </div>
 
             <div id="auth-view-login" class="space-y-4">
-                <button onclick="handleGoogleLogin()" class="w-full bg-white text-slate-900 font-bold py-3.5 px-4 rounded-xl flex items-center justify-center gap-3 transition active:scale-[0.98]">
+                <button type="button" onclick="handleGoogleLogin()" class="w-full bg-white text-slate-900 font-bold py-3.5 px-4 rounded-xl flex items-center justify-center gap-3 transition active:scale-[0.98]">
                     <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" class="w-5 h-5" alt="Google">
                     <span>Google 登入</span>
                 </button>
@@ -196,13 +198,13 @@
                 <input type="email" id="login-email" placeholder="電子郵件" class="w-full modern-input rounded-xl px-4 py-3.5 text-sm">
                 <input type="password" id="login-pass" placeholder="密碼" class="w-full modern-input rounded-xl px-4 py-3.5 text-sm">
                 
-                <button onclick="handleEmailLogin()" class="w-full btn-primary py-3.5 rounded-xl text-sm font-bold shadow-lg shadow-blue-900/20">
+                <button type="button" onclick="handleEmailLogin()" class="w-full btn-primary py-3.5 rounded-xl text-sm font-bold shadow-lg shadow-blue-900/20">
                     登入帳戶
                 </button>
 
                 <div class="flex justify-between items-center text-xs mt-6 px-1">
-                    <button onclick="handleGuestLogin()" class="text-slate-500 hover:text-slate-300">訪客試用</button>
-                    <button onclick="toggleAuthView('register')" class="text-blue-500 hover:text-blue-400 font-medium">註冊新帳號</button>
+                    <button type="button" onclick="handleGuestLogin()" class="text-slate-500 hover:text-slate-300">訪客試用</button>
+                    <button type="button" onclick="toggleAuthView('register')" class="text-blue-500 hover:text-blue-400 font-medium">註冊新帳號</button>
                 </div>
             </div>
 
@@ -210,8 +212,8 @@
                 <h3 class="text-white text-center font-bold mb-6">註冊帳戶</h3>
                 <input type="email" id="reg-email" placeholder="輸入電子郵件" class="w-full modern-input rounded-xl px-4 py-3.5 text-sm">
                 <input type="password" id="reg-pass" placeholder="設定密碼" class="w-full modern-input rounded-xl px-4 py-3.5 text-sm">
-                <button onclick="handleEmailRegister()" class="w-full btn-primary py-3.5 rounded-xl text-sm font-bold">註冊</button>
-                <button onclick="toggleAuthView('login')" class="w-full text-slate-500 text-xs py-2 hover:text-slate-300">返回登入</button>
+                <button type="button" onclick="handleEmailRegister()" class="w-full btn-primary py-3.5 rounded-xl text-sm font-bold">註冊</button>
+                <button type="button" onclick="toggleAuthView('login')" class="w-full text-slate-500 text-xs py-2 hover:text-slate-300">返回登入</button>
             </div>
         </div>
     </div>
@@ -222,7 +224,7 @@
         <!-- Shared Mode Banner -->
         <div id="shared-mode-banner" class="hidden px-4 py-2 text-xs text-center text-indigo-200 font-medium shared-banner z-30 sticky top-0 flex justify-between items-center">
             <span><i class="fas fa-eye mr-2"></i> 正在檢視共享資料</span>
-            <button onclick="exitSharedMode()" class="bg-indigo-700/50 px-3 py-0.5 rounded text-[10px] hover:bg-indigo-600 transition">退出</button>
+            <button type="button" onclick="exitSharedMode()" class="bg-indigo-700/50 px-3 py-0.5 rounded text-[10px] hover:bg-indigo-600 transition">退出</button>
         </div>
 
         <!-- Header -->
@@ -241,12 +243,12 @@
                 </div>
             </div>
             <div class="flex gap-2">
-                <button onclick="openNotifications()" class="w-9 h-9 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-slate-200 flex items-center justify-center transition border border-slate-700 relative">
+                <button type="button" onclick="openNotifications()" class="w-9 h-9 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-slate-200 flex items-center justify-center transition border border-slate-700 relative">
                     <i class="fas fa-bell text-sm"></i>
                     <div id="notif-dot" class="notif-dot"></div>
                 </button>
-                <button onclick="openShareModal()" class="w-9 h-9 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-slate-200 flex items-center justify-center transition border border-slate-700"><i class="fas fa-share-nodes text-sm"></i></button>
-                <button onclick="openSettingsModal()" class="w-9 h-9 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-slate-200 flex items-center justify-center transition border border-slate-700"><i class="fas fa-cog text-sm"></i></button>
+                <button type="button" onclick="openShareModal()" class="w-9 h-9 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-slate-200 flex items-center justify-center transition border border-slate-700"><i class="fas fa-share-nodes text-sm"></i></button>
+                <button type="button" onclick="openSettingsModal()" class="w-9 h-9 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-slate-200 flex items-center justify-center transition border border-slate-700"><i class="fas fa-cog text-sm"></i></button>
             </div>
         </div>
 
@@ -267,8 +269,8 @@
                     
                     <div class="modern-card p-1.5 rounded-xl flex relative h-14 self-center">
                         <div id="toggle-bg" class="absolute w-[calc(50%-6px)] h-[calc(100%-12px)] bg-slate-700 rounded-lg shadow-sm transition-all duration-300 top-1.5 left-1.5"></div>
-                        <button onclick="switchInputMode('income')" class="flex-1 py-2 text-center text-xs font-bold z-10 text-white tracking-wide transition-colors" id="btn-income">機台收入</button>
-                        <button onclick="switchInputMode('stock')" class="flex-1 py-2 text-center text-xs font-bold z-10 text-slate-500 tracking-wide transition-colors" id="btn-stock">網上入貨</button>
+                        <button type="button" onclick="switchInputMode('income')" class="flex-1 py-2 text-center text-xs font-bold z-10 text-white tracking-wide transition-colors" id="btn-income">機台收入</button>
+                        <button type="button" onclick="switchInputMode('stock')" class="flex-1 py-2 text-center text-xs font-bold z-10 text-slate-500 tracking-wide transition-colors" id="btn-stock">網上入貨</button>
                     </div>
                 </div>
 
@@ -356,14 +358,14 @@
             <!-- Page: Settlement -->
             <div id="page-settlement" class="hidden p-5 page-section space-y-5">
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
-                    <button onclick="openDrillDown('surplus')" class="w-full text-left modern-card rounded-2xl p-6 relative group transition-all active:scale-[0.99] hover:border-emerald-500/50"><div class="flex justify-between items-start"><div><p class="text-slate-400 text-xs font-bold uppercase tracking-wider mb-2">總盈餘 (Surplus)</p><h1 class="text-4xl font-mono font-bold text-emerald-400" id="settle-net-income">$0</h1><p class="text-[10px] text-emerald-600 mt-1 font-medium">總營收 - 總支出</p></div><div class="w-12 h-12 rounded-xl bg-emerald-500/10 flex items-center justify-center"><i class="fas fa-coins text-xl text-emerald-400"></i></div></div></button>
-                    <button onclick="openDrillDown('gross_income')" class="w-full text-left modern-card rounded-2xl p-6 relative group transition-all active:scale-[0.99] hover:border-blue-500/50"><div class="flex justify-between items-start"><div><p class="text-slate-400 text-xs font-bold uppercase tracking-wider mb-2">淨總收入 (Total Gross)</p><h1 class="text-4xl font-mono font-bold text-blue-400" id="settle-total-income">$0</h1><p class="text-[10px] text-blue-500/70 mt-1 font-medium">機台 + 影片 + 打卡</p></div><div class="w-12 h-12 rounded-xl bg-blue-500/10 flex items-center justify-center"><i class="fas fa-wallet text-xl text-blue-400"></i></div></div></button>
+                    <button type="button" onclick="openDrillDown('surplus')" class="w-full text-left modern-card rounded-2xl p-6 relative group transition-all active:scale-[0.99] hover:border-emerald-500/50"><div class="flex justify-between items-start"><div><p class="text-slate-400 text-xs font-bold uppercase tracking-wider mb-2">總盈餘 (Surplus)</p><h1 class="text-4xl font-mono font-bold text-emerald-400" id="settle-net-income">$0</h1><p class="text-[10px] text-emerald-600 mt-1 font-medium">總營收 - 總支出</p></div><div class="w-12 h-12 rounded-xl bg-emerald-500/10 flex items-center justify-center"><i class="fas fa-coins text-xl text-emerald-400"></i></div></div></button>
+                    <button type="button" onclick="openDrillDown('gross_income')" class="w-full text-left modern-card rounded-2xl p-6 relative group transition-all active:scale-[0.99] hover:border-blue-500/50"><div class="flex justify-between items-start"><div><p class="text-slate-400 text-xs font-bold uppercase tracking-wider mb-2">淨總收入 (Total Gross)</p><h1 class="text-4xl font-mono font-bold text-blue-400" id="settle-total-income">$0</h1><p class="text-[10px] text-blue-500/70 mt-1 font-medium">機台 + 影片 + 打卡</p></div><div class="w-12 h-12 rounded-xl bg-blue-500/10 flex items-center justify-center"><i class="fas fa-wallet text-xl text-blue-400"></i></div></div></button>
                 </div>
                 <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
-                    <button onclick="openDrillDown('machine_income')" class="w-full text-left modern-card p-4 rounded-xl transition-all active:scale-[0.98] hover:bg-slate-800"><p class="text-slate-500 text-[10px] uppercase font-bold tracking-wider">機台收入</p><p class="text-lg font-bold text-slate-200 font-mono mt-1" id="settle-machine-net">$0</p></button>
-                    <button onclick="openDrillDown('video')" class="w-full text-left modern-card p-4 rounded-xl transition-all active:scale-[0.98] hover:bg-slate-800"><p class="text-slate-500 text-[10px] uppercase font-bold tracking-wider">影片收入</p><p class="text-lg font-bold text-slate-200 font-mono mt-1" id="settle-video">$0</p></button>
-                    <button onclick="openDrillDown('wages')" class="w-full text-left modern-card p-4 rounded-xl transition-all active:scale-[0.98] hover:bg-slate-800"><p class="text-slate-500 text-[10px] uppercase font-bold tracking-wider">打卡工資</p><p class="text-lg font-bold text-slate-200 font-mono mt-1" id="settle-wages">$0</p></button>
-                    <button onclick="openDrillDown('stock')" class="w-full text-left modern-card p-4 rounded-xl transition-all active:scale-[0.98] hover:bg-slate-800"><p class="text-slate-500 text-[10px] uppercase font-bold tracking-wider">入貨支出</p><p class="text-lg font-bold text-red-400 font-mono mt-1" id="settle-stock">$0</p></button>
+                    <button type="button" onclick="openDrillDown('machine_income')" class="w-full text-left modern-card p-4 rounded-xl transition-all active:scale-[0.98] hover:bg-slate-800"><p class="text-slate-500 text-[10px] uppercase font-bold tracking-wider">機台收入</p><p class="text-lg font-bold text-slate-200 font-mono mt-1" id="settle-machine-net">$0</p></button>
+                    <button type="button" onclick="openDrillDown('video')" class="w-full text-left modern-card p-4 rounded-xl transition-all active:scale-[0.98] hover:bg-slate-800"><p class="text-slate-500 text-[10px] uppercase font-bold tracking-wider">影片收入</p><p class="text-lg font-bold text-slate-200 font-mono mt-1" id="settle-video">$0</p></button>
+                    <button type="button" onclick="openDrillDown('wages')" class="w-full text-left modern-card p-4 rounded-xl transition-all active:scale-[0.98] hover:bg-slate-800"><p class="text-slate-500 text-[10px] uppercase font-bold tracking-wider">打卡工資</p><p class="text-lg font-bold text-slate-200 font-mono mt-1" id="settle-wages">$0</p></button>
+                    <button type="button" onclick="openDrillDown('stock')" class="w-full text-left modern-card p-4 rounded-xl transition-all active:scale-[0.98] hover:bg-slate-800"><p class="text-slate-500 text-[10px] uppercase font-bold tracking-wider">入貨支出</p><p class="text-lg font-bold text-red-400 font-mono mt-1" id="settle-stock">$0</p></button>
                 </div>
                 <div class="modern-card p-5 rounded-2xl h-72"><div class="chart-container h-full"><canvas id="financeChart"></canvas></div></div>
             </div>
@@ -371,11 +373,11 @@
 
         <!-- Navigation -->
         <div class="px-2 py-2 flex justify-around items-center z-40 bg-[#13161c] border-t border-slate-800 safe-area-pb absolute bottom-0 w-full md:w-[calc(100%-2px)] md:rounded-b-2xl md:left-[1px]">
-            <button onclick="navTo('counting')" class="nav-item active w-full py-3 flex flex-col items-center group" data-target="counting"><i class="fas fa-calculator text-lg mb-1 transition-transform group-hover:scale-110"></i><span class="text-[10px] font-bold tracking-wide">記數</span></button>
-            <button onclick="navTo('data')" class="nav-item w-full py-3 flex flex-col items-center group hover:text-slate-300" data-target="data"><i class="fas fa-folder text-lg mb-1 transition-transform group-hover:scale-110"></i><span class="text-[10px] font-bold tracking-wide">資料</span></button>
-            <button onclick="navTo('video')" class="nav-item w-full py-3 flex flex-col items-center group hover:text-slate-300" data-target="video"><i class="fas fa-play-circle text-lg mb-1 transition-transform group-hover:scale-110"></i><span class="text-[9px] font-bold tracking-wide">影片</span></button>
-            <button onclick="navTo('checkin')" class="nav-item w-full py-3 flex flex-col items-center group hover:text-slate-300" data-target="checkin"><i class="fas fa-clock text-lg mb-1 transition-transform group-hover:scale-110"></i><span class="text-[9px] font-bold tracking-wide">打卡</span></button>
-            <button onclick="navTo('settlement')" class="nav-item w-full py-3 flex flex-col items-center group hover:text-slate-300" data-target="settlement"><i class="fas fa-chart-pie text-lg mb-1 transition-transform group-hover:scale-110"></i><span class="text-[9px] font-bold tracking-wide">結算</span></button>
+            <button type="button" onclick="navTo('counting')" class="nav-item active w-full py-3 flex flex-col items-center group" data-target="counting"><i class="fas fa-calculator text-lg mb-1 transition-transform group-hover:scale-110"></i><span class="text-[10px] font-bold tracking-wide">記數</span></button>
+            <button type="button" onclick="navTo('data')" class="nav-item w-full py-3 flex flex-col items-center group hover:text-slate-300" data-target="data"><i class="fas fa-folder text-lg mb-1 transition-transform group-hover:scale-110"></i><span class="text-[10px] font-bold tracking-wide">資料</span></button>
+            <button type="button" onclick="navTo('video')" class="nav-item w-full py-3 flex flex-col items-center group hover:text-slate-300" data-target="video"><i class="fas fa-play-circle text-lg mb-1 transition-transform group-hover:scale-110"></i><span class="text-[9px] font-bold tracking-wide">影片</span></button>
+            <button type="button" onclick="navTo('checkin')" class="nav-item w-full py-3 flex flex-col items-center group hover:text-slate-300" data-target="checkin"><i class="fas fa-clock text-lg mb-1 transition-transform group-hover:scale-110"></i><span class="text-[9px] font-bold tracking-wide">打卡</span></button>
+            <button type="button" onclick="navTo('settlement')" class="nav-item w-full py-3 flex flex-col items-center group hover:text-slate-300" data-target="settlement"><i class="fas fa-chart-pie text-lg mb-1 transition-transform group-hover:scale-110"></i><span class="text-[9px] font-bold tracking-wide">結算</span></button>
         </div>
     </div>
 
@@ -383,22 +385,22 @@
     <div id="modal-edit" class="hidden fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm"><div class="w-full max-w-sm modern-card p-6 rounded-2xl shadow-2xl scale-100 transition-transform"><h3 class="text-lg font-bold text-white mb-5 flex items-center gap-3 border-b border-slate-700 pb-3"><i class="fas fa-pen-to-square text-blue-500"></i> 編輯記錄</h3><div id="edit-form-container" class="space-y-4 mb-6"></div><div class="flex gap-3"><button type="button" onclick="closeModal('modal-edit')" class="flex-1 btn-secondary py-3 rounded-lg font-bold text-sm">取消</button><button type="button" onclick="deleteCurrentRecord()" class="flex-1 bg-red-500/10 text-red-500 border border-red-500/20 hover:bg-red-500/20 py-3 rounded-lg font-bold text-sm">刪除</button><button type="button" onclick="updateCurrentRecord()" class="flex-1 btn-primary py-3 rounded-lg font-bold text-sm">儲存</button></div></div></div>
     
     <!-- Drill Down Modal -->
-    <div id="modal-drilldown" class="hidden fixed inset-0 z-[100] flex items-end sm:items-center justify-center bg-black/70 backdrop-blur-sm"><div class="w-full max-w-md h-[80vh] bg-[#181b21] rounded-t-2xl sm:rounded-2xl p-6 border-t border-slate-700 flex flex-col shadow-2xl"><div class="flex justify-between items-center mb-6 border-b border-slate-700 pb-4"><h3 class="text-lg font-bold text-white tracking-wide" id="drilldown-title">詳細記錄</h3><button onclick="closeModal('modal-drilldown')" class="w-8 h-8 rounded-full bg-slate-800 text-slate-400 flex items-center justify-center hover:bg-slate-700 transition"><i class="fas fa-times"></i></button></div><div id="drilldown-list" class="flex-1 overflow-y-auto space-y-2 pr-1"></div></div></div>
+    <div id="modal-drilldown" class="hidden fixed inset-0 z-[100] flex items-end sm:items-center justify-center bg-black/70 backdrop-blur-sm"><div class="w-full max-w-md h-[80vh] bg-[#181b21] rounded-t-2xl sm:rounded-2xl p-6 border-t border-slate-700 flex flex-col shadow-2xl"><div class="flex justify-between items-center mb-6 border-b border-slate-700 pb-4"><h3 class="text-lg font-bold text-white tracking-wide" id="drilldown-title">詳細記錄</h3><button type="button" onclick="closeModal('modal-drilldown')" class="w-8 h-8 rounded-full bg-slate-800 text-slate-400 flex items-center justify-center hover:bg-slate-700 transition"><i class="fas fa-times"></i></button></div><div id="drilldown-list" class="flex-1 overflow-y-auto space-y-2 pr-1"></div></div></div>
 
     <!-- Settings & Share & Notif Modals -->
     <div id="modal-settings" class="hidden fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm"><div class="w-full max-w-md modern-card p-6 rounded-2xl"><h3 class="text-lg font-bold text-white mb-6 border-b border-slate-700 pb-4">系統設定</h3><label class="text-[10px] font-bold text-slate-500 uppercase block mb-2">顯示暱稱</label><input type="text" id="settings-nickname" class="w-full modern-input rounded-lg p-3 mb-4 text-sm"><label class="text-[10px] font-bold text-slate-500 uppercase block mb-2">自定義場地</label><div class="flex gap-2 mb-4"><input type="text" id="new-venue-input" class="flex-1 modern-input rounded-lg p-3 text-sm" placeholder="輸入場地名稱..." onkeypress="if(event.key==='Enter') addSettingItem('venues')"><button type="button" onclick="addSettingItem('venues')" class="bg-slate-700 hover:bg-blue-600 text-white w-10 rounded-lg transition flex items-center justify-center"><i class="fas fa-plus"></i></button></div><div id="venues-list" class="flex flex-wrap gap-2 mb-6 min-h-[30px]"></div><label class="text-[10px] font-bold text-slate-500 uppercase block mb-2">自定義入貨來源</label><div class="flex gap-2 mb-4"><input type="text" id="new-source-input" class="flex-1 modern-input rounded-lg p-3 text-sm" placeholder="輸入來源名稱..." onkeypress="if(event.key==='Enter') addSettingItem('sources')"><button type="button" onclick="addSettingItem('sources')" class="bg-slate-700 hover:bg-blue-600 text-white w-10 rounded-lg transition flex items-center justify-center"><i class="fas fa-plus"></i></button></div><div id="sources-list" class="flex flex-wrap gap-2 mb-6 min-h-[30px]"></div><button type="button" onclick="saveSettings()" class="w-full btn-primary py-3 rounded-lg font-bold text-sm mb-3">儲存變更</button><button type="button" onclick="handleLogout()" class="w-full border border-red-500/30 text-red-500 hover:bg-red-500/10 py-3 rounded-lg font-bold text-sm transition mb-3">登出帳戶</button><button type="button" onclick="closeModal('modal-settings')" class="w-full text-slate-500 text-sm hover:text-white transition">取消</button></div></div>
     
-    <div id="modal-notif" class="hidden fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm"><div class="w-full max-w-md modern-card p-6 rounded-2xl"><div class="flex justify-between items-center mb-6 border-b border-slate-700 pb-4"><h3 class="text-lg font-bold text-white"><i class="fas fa-bell text-blue-500 mr-2"></i>通知中心</h3><button onclick="closeModal('modal-notif')" class="text-slate-400 hover:text-white"><i class="fas fa-times"></i></button></div><div id="notif-list" class="space-y-3 max-h-80 overflow-y-auto mb-4"></div><div id="shared-view-selector" class="border-t border-slate-700 pt-4 hidden"><p class="text-xs text-slate-400 mb-2 font-bold uppercase">切換檢視模式</p><div class="grid grid-cols-1 gap-2" id="shared-users-list"></div><button onclick="switchToMyData()" class="w-full mt-4 btn-secondary py-2 rounded-lg text-sm">返回我的資料</button></div></div></div>
+    <div id="modal-notif" class="hidden fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm"><div class="w-full max-w-md modern-card p-6 rounded-2xl"><div class="flex justify-between items-center mb-6 border-b border-slate-700 pb-4"><h3 class="text-lg font-bold text-white"><i class="fas fa-bell text-blue-500 mr-2"></i>通知中心</h3><button type="button" onclick="closeModal('modal-notif')" class="text-slate-400 hover:text-white"><i class="fas fa-times"></i></button></div><div id="notif-list" class="space-y-3 max-h-80 overflow-y-auto mb-4"></div><div id="shared-view-selector" class="border-t border-slate-700 pt-4 hidden"><p class="text-xs text-slate-400 mb-2 font-bold uppercase">切換檢視模式</p><div class="grid grid-cols-1 gap-2" id="shared-users-list"></div><button type="button" onclick="switchToMyData()" class="w-full mt-4 btn-secondary py-2 rounded-lg text-sm">返回我的資料</button></div></div></div>
 
-    <div id="modal-share" class="hidden fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm"><div class="w-full max-w-md modern-card p-6 rounded-2xl"><h3 class="text-lg font-bold text-white mb-2">資料分享管理</h3><p class="text-xs text-slate-400 mb-6">邀請他人查看您的資料 (唯讀權限)。</p><div class="flex gap-2 mb-6"><input type="email" id="share-email" placeholder="對方 Email" class="flex-1 modern-input rounded-lg p-3 text-sm"><button onclick="sendInvite()" class="btn-primary px-4 rounded-lg font-bold"><i class="fas fa-paper-plane"></i></button></div><h4 class="text-[10px] font-bold text-slate-500 uppercase mb-3 tracking-wider">已發出的邀請</h4><div id="sent-invites-list" class="space-y-2 max-h-40 overflow-y-auto mb-6"></div><div class="space-y-4 mb-8"><div class="flex items-center justify-between p-3 bg-slate-800/50 rounded-lg border border-slate-700"><span class="text-sm font-bold text-slate-300">允許查看記帳明細</span><label class="relative inline-flex items-center cursor-pointer"><input type="checkbox" id="share-toggle-records" class="sr-only peer toggle-checkbox" checked><div class="w-11 h-6 bg-slate-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-500 toggle-label"></div></label></div><div class="flex items-center justify-between p-3 bg-slate-800/50 rounded-lg border border-slate-700"><span class="text-sm font-bold text-slate-300">允許查看影片列表</span><label class="relative inline-flex items-center cursor-pointer"><input type="checkbox" id="share-toggle-videos" class="sr-only peer toggle-checkbox" checked><div class="w-11 h-6 bg-slate-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-500 toggle-label"></div></label></div><div class="flex items-center justify-between p-3 bg-slate-800/50 rounded-lg border border-slate-700"><span class="text-sm font-bold text-slate-300">允許查看打卡記錄</span><label class="relative inline-flex items-center cursor-pointer"><input type="checkbox" id="share-toggle-checkin" class="sr-only peer toggle-checkbox" checked><div class="w-11 h-6 bg-slate-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-500 toggle-label"></div></label></div><div class="flex items-center justify-between p-3 bg-slate-800/50 rounded-lg border border-slate-700"><span class="text-sm font-bold text-slate-300">允許查看結算報表</span><label class="relative inline-flex items-center cursor-pointer"><input type="checkbox" id="share-toggle-settlement" class="sr-only peer toggle-checkbox" checked><div class="w-11 h-6 bg-slate-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-500 toggle-label"></div></label></div></div><button type="button" onclick="saveSharingSettings()" class="w-full btn-primary py-3 rounded-lg font-bold text-sm">儲存設定</button><button type="button" onclick="closeModal('modal-share')" class="w-full text-slate-500 text-sm mt-4 hover:text-white pb-2">關閉</button></div></div>
+    <div id="modal-share" class="hidden fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm"><div class="w-full max-w-md modern-card p-6 rounded-2xl"><h3 class="text-lg font-bold text-white mb-2">資料分享管理</h3><p class="text-xs text-slate-400 mb-6">邀請他人查看您的資料 (唯讀權限)。</p><div class="flex gap-2 mb-6"><input type="email" id="share-email" placeholder="對方 Email" class="flex-1 modern-input rounded-lg p-3 text-sm"><button type="button" onclick="sendInvite()" class="btn-primary px-4 rounded-lg font-bold"><i class="fas fa-paper-plane"></i></button></div><h4 class="text-[10px] font-bold text-slate-500 uppercase mb-3 tracking-wider">已發出的邀請</h4><div id="sent-invites-list" class="space-y-2 max-h-40 overflow-y-auto mb-6"></div><div class="space-y-4 mb-8"><div class="flex items-center justify-between p-3 bg-slate-800/50 rounded-lg border border-slate-700"><span class="text-sm font-bold text-slate-300">允許查看記帳明細</span><label class="relative inline-flex items-center cursor-pointer"><input type="checkbox" id="share-toggle-records" class="sr-only peer toggle-checkbox" checked><div class="w-11 h-6 bg-slate-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-500 toggle-label"></div></label></div><div class="flex items-center justify-between p-3 bg-slate-800/50 rounded-lg border border-slate-700"><span class="text-sm font-bold text-slate-300">允許查看影片列表</span><label class="relative inline-flex items-center cursor-pointer"><input type="checkbox" id="share-toggle-videos" class="sr-only peer toggle-checkbox" checked><div class="w-11 h-6 bg-slate-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-500 toggle-label"></div></label></div><div class="flex items-center justify-between p-3 bg-slate-800/50 rounded-lg border border-slate-700"><span class="text-sm font-bold text-slate-300">允許查看打卡記錄</span><label class="relative inline-flex items-center cursor-pointer"><input type="checkbox" id="share-toggle-checkin" class="sr-only peer toggle-checkbox" checked><div class="w-11 h-6 bg-slate-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-500 toggle-label"></div></label></div><div class="flex items-center justify-between p-3 bg-slate-800/50 rounded-lg border border-slate-700"><span class="text-sm font-bold text-slate-300">允許查看結算報表</span><label class="relative inline-flex items-center cursor-pointer"><input type="checkbox" id="share-toggle-settlement" class="sr-only peer toggle-checkbox" checked><div class="w-11 h-6 bg-slate-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-500 toggle-label"></div></label></div></div><button type="button" onclick="saveSharingSettings()" class="w-full btn-primary py-3 rounded-lg font-bold text-sm">儲存設定</button><button type="button" onclick="closeModal('modal-share')" class="w-full text-slate-500 text-sm mt-4 hover:text-white pb-2">關閉</button></div></div>
 
     <!-- Toast & Stub -->
     <div id="toast" class="fixed top-6 left-1/2 transform -translate-x-1/2 bg-[#181b21] text-white px-6 py-4 rounded-2xl shadow-2xl z-[70] opacity-0 pointer-events-none transition-all duration-300 text-sm font-bold flex items-center gap-3 border border-slate-700"><i class="fas fa-check-circle text-blue-500 text-lg"></i><span id="toast-msg">操作成功</span></div>
     
     <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-app.js";
-        import { getAuth, signInWithPopup, GoogleAuthProvider, signInWithEmailAndPassword, createUserWithEmailAndPassword, signInAnonymously, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-auth.js";
-        import { getFirestore, collection, addDoc, query, where, orderBy, onSnapshot, deleteDoc, doc, setDoc, getDoc, updateDoc } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-firestore.js";
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+        import { getAuth, signInWithPopup, GoogleAuthProvider, signInWithEmailAndPassword, createUserWithEmailAndPassword, signInAnonymously, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+        import { getFirestore, collection, addDoc, query, where, orderBy, onSnapshot, deleteDoc, doc, setDoc, getDoc, updateDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyBJ0qf4FyJ-Ln8uTlVfyqq84IAeUsTWSCo",
@@ -411,8 +413,8 @@
         };
 
         let app, auth, db;
-        try { app = initializeApp(firebaseConfig); auth = getAuth(app); db = getFirestore(app); } 
-        catch (e) { console.error("Init Error", e); }
+        try { app = initializeApp(firebaseConfig); auth = getAuth(app); db = getFirestore(app); document.getElementById('init-status').classList.add('hidden'); } 
+        catch (e) { console.error("Init Error", e); showToast("系統初始化失敗，請檢查網絡"); }
         
         // --- 1. DEFINE VARIABLES ---
         let currentUser = null, isGuest = false;
@@ -423,7 +425,7 @@
         let editingSettings = null, activeEdit = null, workStart = null;
         let currentViewMode = 'mine', sharedTargetUid = null, activeInvitationId = null, unsubscribeSharedMonitor = null, unsubscribes = [];
 
-        // --- 2. DEFINE HELPER FUNCTIONS (Pure Logic) ---
+        // --- 2. DEFINE HELPER FUNCTIONS (Pure Logic, top level) ---
         const showToast = (msg) => {
             const t = document.getElementById('toast');
             if(t) {
@@ -460,7 +462,8 @@
         const renderCustomSelectors = () => { createCustomSelect('venue-selector-container', 'income-venue', settings.venues, '選擇場地'); createCustomSelect('stock-source-selector-container', 'stock-source', settings.sources, '選擇來源'); };
 
         const renderEditTags = (t) => {
-            document.getElementById(t==='venues'?'venues-list':'sources-list').innerHTML = editingSettings[t].map((x,i) => 
+            const el = document.getElementById(t==='venues'?'venues-list':'sources-list');
+            if(el) el.innerHTML = editingSettings[t].map((x,i) => 
                 `<div class="tag-chip"><span>${x}</span><i class="fas fa-times cursor-pointer hover:text-white" onclick="removeSettingItem('${t}',${i})"></i></div>`
             ).join('');
         };
@@ -517,7 +520,9 @@
 
         const renderRecentRecords = () => {
             const all = [...recordsData.map(r=>({...r, cat:'rec', time:new Date(r.date||r.createdAt).getTime()})), ...videoData.map(v=>({...v, cat:'vid', time:new Date(v.date||v.createdAt).getTime()})), ...timesheetData.map(t=>({...t, cat:'chk', time:new Date(t.start||t.createdAt).getTime()}))].sort((a,b)=>b.time-a.time).slice(0,10);
-            document.getElementById('recent-records-list').innerHTML = all.length ? all.map(i => {
+            const el = document.getElementById('recent-records-list');
+            if(!el) return;
+            el.innerHTML = all.length ? all.map(i => {
                 let ic, col, ti, sub, amt, act;
                 if(i.cat==='rec') { const inc=i.type==='income'; ic=inc?'fa-gamepad':'fa-box'; col=inc?'text-blue-400':'text-red-400'; ti=inc?i.venue:i.name; sub=i.date; amt=(inc?'+':'-')+'$'+i.amount; act=`openEditRecord('${i.id}')`; }
                 else if(i.cat==='vid') { ic='fa-video'; col='text-purple-400'; ti=i.title; sub=new Date(i.date).toLocaleDateString(); amt='+$25'; act=`openEditVideo('${i.id}')`; }
@@ -533,6 +538,7 @@
 
         const renderDataTree = () => {
             const c = document.getElementById('data-tree-container');
+            if(!c) return;
             if(!recordsData.length) { c.innerHTML='<div class="text-center text-slate-500 mt-10">暫無數據</div>'; return; }
             const inc = recordsData.filter(r=>r.type==='income'); const st = recordsData.filter(r=>r.type==='stock');
             c.innerHTML = renderFolderBlock('機台收入','income',inc,inc.reduce((s,r)=>s+Number(r.amount),0),'text-blue-400') + renderFolderBlock('網上入貨','stock',st,st.reduce((s,r)=>s+Number(r.amount),0),'text-red-400');
@@ -540,18 +546,21 @@
 
         const renderVideos = () => {
             const list = document.getElementById('video-list');
+            if(!list) return;
             if (videoData.length === 0) { list.innerHTML = '<div class="text-center text-slate-500 text-xs py-4">本月尚無影片</div>'; return; }
             list.innerHTML = videoData.slice(0, 10).map(v => `<div class="modern-card p-4 rounded-xl flex justify-between items-center cursor-pointer border border-white/5 hover:border-purple-500/30 transition" onclick="openEditVideo('${v.id}')"><div class="flex items-center gap-3"><div class="bg-purple-500/10 text-purple-400 w-10 h-10 rounded-lg flex items-center justify-center text-lg"><i class="fas fa-play"></i></div><div><div class="font-bold text-slate-200 text-sm">${v.title}</div><div class="text-[10px] text-slate-500 font-mono">${v.date}</div></div></div><div class="text-purple-400 font-bold font-mono text-sm">+$25</div></div>`).join('');
         };
 
         const renderCheckins = () => {
              const list = document.getElementById('checkin-list');
+             if(!list) return;
              if (timesheetData.length === 0) { list.innerHTML = '<div class="text-center text-slate-500 text-xs py-2">無打卡記錄</div>'; return; }
              list.innerHTML = timesheetData.slice().reverse().map(t => `<div class="flex justify-between items-center p-3 bg-white/5 rounded-lg border border-white/5 mb-2 cursor-pointer hover:bg-white/10" onclick="openEditCheckin('${t.id}')"><div class="flex flex-col"><span class="text-[10px] text-slate-400 font-bold uppercase font-mono">${new Date(t.start).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})} - ${new Date(t.end).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}</span><span class="text-[10px] text-slate-500">${new Date(t.start).toLocaleDateString()}</span></div><span class="font-bold text-green-400 font-mono text-sm">+$${t.wage}</span></div>`).join('');
         };
         
         const renderReceivedInvites = () => {
             const list = document.getElementById('notif-list'); const userList = document.getElementById('shared-users-list');
+            if(!list || !userList) return;
             list.innerHTML = ''; userList.innerHTML = ''; let hasAccepted = false;
             receivedInvitations.forEach(inv => {
                 if(inv.status === 'pending') {
@@ -566,7 +575,8 @@
         };
         
         const renderSentInvites = () => {
-            document.getElementById('sent-invites-list').innerHTML = sentInvitations.map(inv => `<div class="flex justify-between items-center p-3 bg-white/5 rounded-xl border border-white/5"><div><div class="text-xs text-white font-bold mb-1">${inv.toEmail}</div><div class="text-[10px] ${inv.status==='accepted'?'text-green-400':'text-yellow-400'} flex items-center gap-1"><span class="w-1.5 h-1.5 rounded-full ${inv.status==='accepted'?'bg-green-400':'bg-yellow-400'}"></span> ${inv.status==='accepted'?'已接受':'等待中'}</div></div><button onclick="rejectInvite('${inv.id}')" class="text-red-400 hover:text-red-300 text-xs border border-red-500/30 px-3 py-1.5 rounded-lg hover:bg-red-500/10 transition">撤銷</button></div>`).join('');
+            const el = document.getElementById('sent-invites-list');
+            if(el) el.innerHTML = sentInvitations.map(inv => `<div class="flex justify-between items-center p-3 bg-white/5 rounded-xl border border-white/5"><div><div class="text-xs text-white font-bold mb-1">${inv.toEmail}</div><div class="text-[10px] ${inv.status==='accepted'?'text-green-400':'text-yellow-400'} flex items-center gap-1"><span class="w-1.5 h-1.5 rounded-full ${inv.status==='accepted'?'bg-green-400':'bg-yellow-400'}"></span> ${inv.status==='accepted'?'已接受':'等待中'}</div></div><button onclick="rejectInvite('${inv.id}')" class="text-red-400 hover:text-red-300 text-xs border border-red-500/30 px-3 py-1.5 rounded-lg hover:bg-red-500/10 transition">撤銷</button></div>`).join('');
         };
         
         const restoreSession = (iso) => {
@@ -614,7 +624,7 @@
         window.showToast = showToast;
         window.toggleSelect = (id) => { const el=document.getElementById(id+'-options'); const open=el.classList.contains('open'); document.querySelectorAll('.custom-select-options').forEach(e=>e.classList.remove('open')); if(!open) el.classList.add('open'); };
         window.selectOption = (id,v) => { document.getElementById(id).value=v; document.getElementById(id+'-display').innerText=v; document.getElementById(id+'-options').classList.remove('open'); };
-
+        
         window.navTo = (t) => {
             document.querySelectorAll('.page-section').forEach(e => e.classList.add('hidden'));
             const targetPage = document.getElementById('page-' + t);
@@ -641,8 +651,23 @@
         
         window.handleLogout = async () => { if(!isGuest) await signOut(auth); location.reload(); };
         window.closeModal = (id) => document.getElementById(id).classList.add('hidden');
-        window.openSettingsModal = () => { editingSettings = JSON.parse(JSON.stringify(settings)); document.getElementById('settings-nickname').value = editingSettings.nickname || ''; renderEditTags('venues'); renderEditTags('sources'); document.getElementById('modal-settings').classList.remove('hidden'); };
-        window.openShareModal = () => { document.getElementById('share-toggle-records').checked = sharingSettings.records !== false; document.getElementById('share-toggle-videos').checked = sharingSettings.videos !== false; document.getElementById('share-toggle-checkin').checked = sharingSettings.checkin !== false; document.getElementById('share-toggle-settlement').checked = sharingSettings.settlement !== false; document.getElementById('modal-share').classList.remove('hidden'); };
+        
+        window.openSettingsModal = () => { 
+            editingSettings = JSON.parse(JSON.stringify(settings)); 
+            document.getElementById('settings-nickname').value = editingSettings.nickname || ''; 
+            renderEditTags('venues'); 
+            renderEditTags('sources'); 
+            document.getElementById('modal-settings').classList.remove('hidden'); 
+        };
+        
+        window.openShareModal = () => { 
+            document.getElementById('share-toggle-records').checked = sharingSettings.records !== false; 
+            document.getElementById('share-toggle-videos').checked = sharingSettings.videos !== false; 
+            document.getElementById('share-toggle-checkin').checked = sharingSettings.checkin !== false; 
+            document.getElementById('share-toggle-settlement').checked = sharingSettings.settlement !== false; 
+            document.getElementById('modal-share').classList.remove('hidden'); 
+        };
+        
         window.openNotifications = () => document.getElementById('modal-notif').classList.remove('hidden');
 
         window.saveSharingSettings = async () => {
@@ -656,9 +681,11 @@
             else { await setDoc(doc(db, getPath('settings'), 'sharing'), sharingSettings, {merge:true}); window.showToast("權限已更新"); }
             window.closeModal('modal-share');
         };
+
         window.addSettingItem=(t)=>{const i=document.getElementById(t==='venues'?'new-venue-input':'new-source-input');if(i.value){editingSettings[t].push(i.value);i.value='';renderEditTags(t);}};
         window.removeSettingItem=(t,ix)=>{editingSettings[t].splice(ix,1);renderEditTags(t);};
         window.saveSettings=async()=>{settings=editingSettings;if(isGuest)saveGuestData();else await setDoc(doc(db,getPath('settings'),'config'),settings,{merge:true});updateUIForUser();renderCustomSelectors();window.closeModal('modal-settings');};
+        
         window.switchInputMode=(m)=>{const bg=document.getElementById('toggle-bg'); if(m==='income'){bg.style.transform='translateX(0)';document.getElementById('form-income').classList.remove('hidden');document.getElementById('form-stock').classList.add('hidden');}else{bg.style.transform='translateX(100%)';document.getElementById('form-income').classList.add('hidden');document.getElementById('form-stock').classList.remove('hidden');}};
         window.toggleMachineType=()=>{const t=document.querySelector('input[name="machineType"]:checked').value;document.getElementById('standard-amount-input').classList.toggle('hidden',t!=='standard');document.getElementById('mini-amount-input').classList.toggle('hidden',t!=='mini');window.calculateTotalIncome();};
         window.calculateTotalIncome=()=>{const t=document.querySelector('input[name="machineType"]:checked').value;let tot=t==='standard'?(Number(document.getElementById('income-amount').value)||0):((Number(document.getElementById('income-top').value)||0)+(Number(document.getElementById('income-bottom').value)||0));document.getElementById('income-display-total').innerText='$'+tot;return tot;};
@@ -677,6 +704,7 @@
         window.openEditRecord = (id) => { const r = recordsData.find(x => x.id === id); if(!r) return; openEditModal(id, r.type, r, [ { id: 'edit-date', label: '日期', type: 'date', val: r.date }, { id: 'edit-amount', label: '金額', type: 'number', val: r.amount }, { id: 'edit-remark', label: '備註/名稱', type: 'text', val: r.remarks || r.name } ]); };
         window.openEditVideo = (id) => { const v = videoData.find(x => x.id === id); if(!v) return; activeEdit = { id, type: 'video', data: v }; document.getElementById('edit-form-container').innerHTML = `<div><label class="text-[10px] text-slate-500 uppercase">標題</label><input type="text" id="edit-title" value="${v.title}" class="w-full modern-input rounded-lg p-3 text-sm"></div><div><label class="text-[10px] text-slate-500 uppercase">日期</label><input type="date" id="edit-date" value="${v.date}" class="w-full modern-input rounded-lg p-3 text-sm"></div>`; document.getElementById('modal-edit').classList.remove('hidden'); };
         window.openEditCheckin = (id) => { const t = timesheetData.find(x => x.id === id); if(!t) return; activeEdit = { id, type: 'checkin', data: t }; document.getElementById('edit-form-container').innerHTML = `<div><label class="text-[10px] text-slate-500 uppercase">工資 ($)</label><input type="number" id="edit-wage" value="${t.wage}" class="w-full modern-input rounded-lg p-3 text-sm font-mono"></div>`; document.getElementById('modal-edit').classList.remove('hidden'); };
+
         window.updateCurrentRecord = async () => { if(!activeEdit) return; const { id, type } = activeEdit; const updates = {}; const mapping = { 'edit-date': 'date', 'edit-amount': 'amount', 'edit-remark': (type==='income'?'remarks':'name'), 'edit-title': 'title', 'edit-wage': 'wage' }; for (const [eid, field] of Object.entries(mapping)) { if(document.getElementById(eid)) updates[field] = (field==='amount'||field==='wage') ? Number(document.getElementById(eid).value) : document.getElementById(eid).value; } if(isGuest) { if(type === 'video') { const idx = videoData.findIndex(x=>x.id===id); if(idx>-1) Object.assign(videoData[idx], updates); } else if(type === 'checkin') { const idx = timesheetData.findIndex(x=>x.id===id); if(idx>-1) Object.assign(timesheetData[idx], updates); } else { const idx = recordsData.findIndex(x=>x.id===id); if(idx>-1) Object.assign(recordsData[idx], updates); } saveGuestData(); } else { const col = type === 'video' ? 'videos' : (type === 'checkin' ? 'timesheets' : 'records'); await updateDoc(doc(db, getPath(col), id), updates); } window.showToast("已更新"); closeModal('modal-edit'); };
         window.deleteCurrentRecord = async () => { if(!activeEdit) return; const { id, type } = activeEdit; if(isGuest) { if(type === 'video') videoData = videoData.filter(x=>x.id!==id); else if(type === 'checkin') timesheetData = timesheetData.filter(x=>x.id!==id); else recordsData = recordsData.filter(x=>x.id!==id); saveGuestData(); } else { const col = type === 'video' ? 'videos' : (type === 'checkin' ? 'timesheets' : 'records'); await deleteDoc(doc(db, getPath(col), id)); } window.showToast("已刪除"); closeModal('modal-edit'); };
         
@@ -696,16 +724,6 @@
         window.switchToSharedView = (targetUid, targetName, inviteId) => { if(unsubscribeSharedMonitor) unsubscribeSharedMonitor(); unsubscribeSharedMonitor = onSnapshot(doc(db, `artifacts/${firebaseConfig.appId}/public/data/invitations`, inviteId), (snap) => { if(!snap.exists() || snap.data().status !== 'accepted') exitSharedMode("權限已變更"); }); currentViewMode = 'shared'; sharedTargetUid = targetUid; activeInvitationId = inviteId; document.getElementById('shared-mode-banner').classList.remove('hidden'); document.getElementById('display-username').innerText = `${targetName} (共享)`; document.getElementById('main-header').classList.add('border-indigo-500'); document.querySelectorAll('.write-action').forEach(el => el.classList.add('hidden')); window.closeModal('modal-notif'); initRealtimeListeners(); window.showToast(`已切換至 ${targetName}`); };
         window.exitSharedMode = exitSharedMode;
         
-        function loadGuestData() {
-            const ls = localStorage;
-            recordsData = JSON.parse(ls.getItem('guest_records') || '[]');
-            videoData = JSON.parse(ls.getItem('guest_videos') || '[]');
-            timesheetData = JSON.parse(ls.getItem('guest_timesheets') || '[]');
-            const s = JSON.parse(ls.getItem('guest_settings')); if(s) settings = s;
-            if(ls.getItem('guest_active_session')) restoreSession(ls.getItem('guest_active_session'));
-            renderCustomSelectors(); renderAll();
-        }
-
         // Listeners
         document.addEventListener('click', e => { if(!e.target.closest('.custom-select-wrapper')) document.querySelectorAll('.custom-select-options').forEach(el=>el.classList.remove('open')); });
         setInterval(()=>{const now=new Date();document.getElementById('clock-time').innerText=now.toLocaleTimeString('en-GB',{hour12:false});document.getElementById('clock-date').innerText=now.toLocaleDateString('en-GB',{weekday:'short',year:'numeric',month:'short',day:'numeric'});},1000);
